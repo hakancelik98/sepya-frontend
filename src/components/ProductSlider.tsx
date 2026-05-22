@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Heart, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
-import FavoriteButton from "@/components/FavoriteButton"; // Import edildi
+import FavoriteButton from "@/components/FavoriteButton";
 
 export default function AdaStyleSlider() {
     const [items, setItems] = useState<any[]>([]);
@@ -69,10 +69,8 @@ export default function AdaStyleSlider() {
         const singleSetWidth = scrollWidth / 3;
 
         if (scrollLeft >= singleSetWidth * 2) {
-            container.style.scrollBehavior = 'auto';
             container.scrollLeft = scrollLeft - singleSetWidth;
         } else if (scrollLeft <= 0) {
-            container.style.scrollBehavior = 'auto';
             container.scrollLeft = singleSetWidth;
         }
     };
@@ -87,9 +85,33 @@ export default function AdaStyleSlider() {
         container.scrollBy({ left: direction === 'right' ? scrollAmount : -scrollAmount });
 
         setTimeout(() => {
-            handleInfiniteScroll();
             isMoving.current = false;
         }, 400);
+    };
+
+    // Sürükleme Başlangıcı (Masaüstü & Mobil)
+    const handleDragStart = (clientX: number) => {
+        if (!scrollContainerRef.current) return;
+        isDragging.current = true;
+        startX.current = clientX - scrollContainerRef.current.offsetLeft;
+        scrollLeftStart.current = scrollContainerRef.current.scrollLeft;
+        scrollContainerRef.current.style.scrollBehavior = 'auto';
+    };
+
+    // Sürükleme Hareketi (Masaüstü & Mobil)
+    const handleDragMove = (clientX: number, e: any) => {
+        if (!isDragging.current || !scrollContainerRef.current) return;
+        // Mobil dikey kaydırmayı engellememek için preventDefault() kullanmıyoruz,
+        // ancak yatayda akıcılık için duruma göre yönetilebilir.
+        const x = clientX - scrollContainerRef.current.offsetLeft;
+        const walk = (x - startX.current) * 1.5; // Hassasiyet çarpanı
+        scrollContainerRef.current.scrollLeft = scrollLeftStart.current - walk;
+    };
+
+    // Sürükleme Bitişi (Masaüstü & Mobil)
+    const handleDragEnd = () => {
+        isDragging.current = false;
+        handleInfiniteScroll();
     };
 
     if (items.length === 0) return null;
@@ -126,22 +148,21 @@ export default function AdaStyleSlider() {
 
                 <div
                     ref={scrollContainerRef}
-                    className="flex overflow-x-hidden gap-2 md:gap-6 cursor-grab active:cursor-grabbing pb-4"
-                    onMouseDown={(e) => {
-                        isDragging.current = true;
-                        startX.current = e.pageX - scrollContainerRef.current!.offsetLeft;
-                        scrollLeftStart.current = scrollContainerRef.current!.scrollLeft;
-                        scrollContainerRef.current!.style.scrollBehavior = 'auto';
-                    }}
-                    onMouseMove={(e) => {
-                        if (!isDragging.current) return;
-                        e.preventDefault();
-                        const x = e.pageX - scrollContainerRef.current!.offsetLeft;
-                        const walk = (x - startX.current) * 1.5;
-                        scrollContainerRef.current!.scrollLeft = scrollLeftStart.current - walk;
-                    }}
-                    onMouseUp={() => { isDragging.current = false; handleInfiniteScroll(); }}
-                    onMouseLeave={() => { isDragging.current = false; }}
+                    // touch-pan-y: Dikeyde normal sayfa kaydırmayı bozmaz, yatayda tarayıcı varsayılanını engeller
+                    // overflow-x-auto: Mobilde kendi doğal kaydırma (momentum scroll) yeteneğini açar
+                    className="flex overflow-x-auto gap-2 md:gap-6 cursor-grab active:cursor-grabbing pb-4 touch-pan-y"
+
+                    // Masaüstü Fare Olayları
+                    onMouseDown={(e) => handleDragStart(e.pageX)}
+                    onMouseMove={(e) => handleDragMove(e.pageX, e)}
+                    onMouseUp={handleDragEnd}
+                    onMouseLeave={handleDragEnd}
+
+                    // Mobil Dokunma Olayları
+                    onTouchStart={(e) => handleDragStart(e.touches[0].pageX)}
+                    onTouchMove={(e) => handleDragMove(e.touches[0].pageX, e)}
+                    onTouchEnd={handleDragEnd}
+
                     onScroll={handleInfiniteScroll}
                 >
                     {items.map((item, index) => {
@@ -150,7 +171,8 @@ export default function AdaStyleSlider() {
 
                         return (
                             <div key={`${item.id}-${index}`} className="flex-none w-[calc(50%-4px)] md:w-[calc(25%-18px)] group/card">
-                                <div className="relative overflow-hidden bg-[#f7f7f7]">
+                                {/* pointer-events-none ve user-select-none: Görsellerin ve linklerin kaydırmayı kitlemesini önler */}
+                                <div className="relative overflow-hidden bg-[#f7f7f7] select-none pointer-events-none md:pointer-events-auto">
 
                                     {/* SeasonLabel / Etiket */}
                                     {item.seasonLabel && !isOutOfStock && (
@@ -165,7 +187,14 @@ export default function AdaStyleSlider() {
                                         </div>
                                     )}
 
-                                    <Link href={`/product/${item.id}`} className="block aspect-[3/4] relative overflow-hidden">
+                                    <Link
+                                        href={`/product/${item.id}`}
+                                        className="block aspect-[3/4] relative overflow-hidden pointer-events-auto"
+                                        onClick={(e) => {
+                                            // Eğer kullanıcı kaydırıyorsa yanlışlıkla linke tıklayıp gitmesin
+                                            if (isDragging.current) e.preventDefault();
+                                        }}
+                                    >
                                         <img
                                             src={fixUrl(item.imageUrl)}
                                             className={`w-full h-full object-cover transition-opacity duration-700 ${item.hoverImageUrl && 'group-hover/card:opacity-0'}`}
@@ -185,7 +214,7 @@ export default function AdaStyleSlider() {
                                     <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover/card:translate-y-0 transition-transform duration-300 ease-in-out z-20 hidden md:block">
                                         {isOutOfStock ? (
                                             <button className="w-full bg-white/90 backdrop-blur-md text-black py-4 text-[10px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                                                <Bell size={12} /> Gelince Haber Ver
+                                                Gelince Haber Ver
                                             </button>
                                         ) : (
                                             <button
@@ -197,7 +226,7 @@ export default function AdaStyleSlider() {
                                         )}
                                     </div>
 
-                                    {/* FAVORİ BUTONU - FavoriteButton Component */}
+                                    {/* FAVORİ BUTONU - Tıklanabilir olması için pointer-events-auto eklendi */}
                                     <FavoriteButton productId={item.id} className="absolute top-3 right-3 z-10 pointer-events-auto" />
                                 </div>
 
