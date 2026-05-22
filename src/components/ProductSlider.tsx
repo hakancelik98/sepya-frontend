@@ -47,33 +47,14 @@ export default function AdaStyleSlider() {
                     seasonLabel: d.product.seasonLabel || d.tag || "",
                     productSubtitle: d.product.subtitle || d.subtitle || ""
                 }));
-                // Sonsuz döngü hissi için 3 set halinde birleştiriyoruz
-                setItems([...active, ...active, ...active]);
+
+                // ARTIK ÜRÜNLERİ ÇOĞALTMIYORUZ: Sadece gelen net listeyi neyse onu koyuyoruz
+                setItems(active);
             })
             .catch(err => console.error("Slider fetch error:", err));
     }, []);
 
-    useEffect(() => {
-        if (items.length > 0 && scrollContainerRef.current) {
-            const container = scrollContainerRef.current;
-            container.scrollLeft = container.scrollWidth / 3;
-        }
-    }, [items.length]);
-
-    // Mobildeki akıcı kaydırmayı bozmamak için bu işlemi sadece scroll durduğunda veya sakinleştiğinde tetikliyoruz
-    const handleInfiniteScroll = () => {
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const { scrollLeft, scrollWidth } = container;
-        const singleSetWidth = scrollWidth / 3;
-
-        if (scrollLeft >= singleSetWidth * 2) {
-            container.scrollLeft = scrollLeft - singleSetWidth;
-        } else if (scrollLeft <= 0) {
-            container.scrollLeft = singleSetWidth;
-        }
-    };
-
+    // Masaüstündeki butonlar için normal kaydırma adımı
     const scroll = (direction: 'left' | 'right') => {
         if (!scrollContainerRef.current || isMoving.current) return;
         const container = scrollContainerRef.current;
@@ -91,7 +72,6 @@ export default function AdaStyleSlider() {
     if (items.length === 0) return null;
 
     return (
-        // Mobilde sağa sola taşma olmasın diye px-0 yaptık (Tam sınırlara dayansın)
         <section className="py-12 bg-white select-none overflow-hidden">
             <div className="w-full max-w-[1536px] mx-auto px-0 md:px-6 relative group">
 
@@ -114,7 +94,6 @@ export default function AdaStyleSlider() {
                     <div className="w-12 h-[1px] bg-black mt-4"></div>
                 </div>
 
-                {/* Oklar sadece masaüstünde görünür */}
                 <button onClick={() => scroll('left')} className="hidden md:flex absolute left-4 top-[45%] z-20 w-11 h-11 items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white">
                     <ChevronLeft size={20} strokeWidth={1} />
                 </button>
@@ -125,10 +104,9 @@ export default function AdaStyleSlider() {
                 {/* SLIDER KAPSAYICISI */}
                 <div
                     ref={scrollContainerRef}
-                    // snap-x mandatory: Mobilde kaydırınca ürünün ortada şık diye durmasını sağlar
-                    // scroll-smooth ve webkit-overflow-scrolling: Mobildeki o kayma ivmesini (momentum) donmadan verir.
+                    // onScroll tetikleyicisini kaldırdık, yapay atlamalar tamamen son buldu.
+                    // overscroll-x-contain: Sona dayandığında tarayıcının tüm sayfayı geri fırlatmasını önler, duvara çarpar.
                     className="flex overflow-x-auto gap-[2px] md:gap-6 pb-4 snap-x mandatory scroll-smooth overscroll-x-contain"
-                    onScroll={handleInfiniteScroll}
                     style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                     {items.map((item, index) => {
@@ -136,14 +114,12 @@ export default function AdaStyleSlider() {
                         const hasDiscount = item.discountedPrice && item.discountedPrice < item.price;
 
                         return (
-                            // Mobilde tam olarak ekranın yarısını kaplar (w-[calc(50%-1px)]) ve sınırlara kadar açılır
                             <div
                                 key={`${item.id}-${index}`}
                                 className="flex-none w-[calc(50%-1px)] md:w-[calc(25%-18px)] snap-start group/card"
                             >
                                 <div className="relative overflow-hidden bg-[#f7f7f7]">
 
-                                    {/* SeasonLabel / Etiket */}
                                     {item.seasonLabel && !isOutOfStock && (
                                         <div className="absolute top-2 left-2 z-10 bg-red-700 text-white px-2 py-0.5 text-[9px] tracking-tighter uppercase font-medium">
                                             {item.seasonLabel}
@@ -156,7 +132,6 @@ export default function AdaStyleSlider() {
                                         </div>
                                     )}
 
-                                    {/* Görsellerin alanı mobilde de genişledi (3/4 oranında korundu) */}
                                     <Link href={`/product/${item.id}`} className="block aspect-[3/4] relative overflow-hidden">
                                         <img
                                             src={fixUrl(item.imageUrl)}
@@ -174,7 +149,6 @@ export default function AdaStyleSlider() {
                                         )}
                                     </Link>
 
-                                    {/* Sepete ekle butonu masaüstünde hover olunca açılır */}
                                     <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover/card:translate-y-0 transition-transform duration-300 ease-in-out z-20 hidden md:block">
                                         {isOutOfStock ? (
                                             <button className="w-full bg-white/90 backdrop-blur-md text-black py-4 text-[10px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
@@ -190,11 +164,9 @@ export default function AdaStyleSlider() {
                                         )}
                                     </div>
 
-                                    {/* FAVORİ BUTONU */}
                                     <FavoriteButton productId={item.id} className="absolute top-2 right-2 z-10" />
                                 </div>
 
-                                {/* Ürün Bilgileri Bölümü */}
                                 <div className="mt-3 text-center px-2">
                                     {item.productSubtitle && (
                                         <span className="block text-[9px] md:text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-0.5 font-light">
@@ -232,7 +204,5 @@ export default function AdaStyleSlider() {
                 div::-webkit-scrollbar { display: none; }
             `}</style>
         </section>
-
-        
     );
 }
