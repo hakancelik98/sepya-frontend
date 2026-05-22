@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model announcements {
+  id      BigInt  @id @default(autoincrement())
+  content String?
+}
+
+model brand_story_settings {
+  id                   BigInt  @id
+  description          String? @db.VarChar(255)
+  follower_count_text  String? @db.VarChar(255)
+  instagram_follow_url String? @db.VarChar(255)
+  instagram_username   String? @db.VarChar(255)
+  section_subtitle     String? @db.VarChar(255)
+  section_title        String? @db.VarChar(255)
+}
+
+model brands {
+  id            BigInt  @id @default(autoincrement())
+  active        Boolean
+  description   String?
+  display_order Int
+  image_url     String? @db.VarChar(255)
+  name          String  @db.VarChar(255)
+  slug          String  @unique(map: "ukpnhnc9urm6fro7oseu9vka70q") @db.VarChar(255)
+}
+
+model cart_items {
+  id         BigInt    @id @default(autoincrement())
+  added_at   DateTime? @db.Timestamp(6)
+  quantity   Int
+  cart_id    BigInt
+  product_id BigInt
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk1re40cjegsfvw58xrkdp6bac6")
+  carts      carts     @relation(fields: [cart_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkpcttvuq4mxppo8sxggjtn5i2c")
+}
+
+model carts {
+  id         BigInt       @id @default(autoincrement())
+  created_at DateTime?    @db.Timestamp(6)
+  updated_at DateTime?    @db.Timestamp(6)
+  user_id    BigInt       @unique(map: "uk64t7ox312pqal3p7fg9o503c2")
+  cart_items cart_items[]
+  users      users        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkb5o626f86h46m4s7ms6ginnop")
+}
+
+model categories {
+  id        BigInt     @id @default(autoincrement())
+  name      String?    @db.VarChar(255)
+  slug      String?    @unique(map: "ukoul14ho7bctbefv8jywp5v3i2") @db.VarChar(255)
+  image_url String?    @db.VarChar(255)
+  products  products[]
+}
+
+model extra_heroes {
+  id               BigInt  @id @default(autoincrement())
+  alignment        String?
+  background_color String?
+  background_image String?
+  button_link      String?
+  button_text      String?
+  display_order    Int
+  height           String?
+  is_active        Boolean
+  name             String?
+  overlay          Boolean
+  overlay_opacity  Int
+  subtitle         String?
+  subtitle_size    Int
+  text_color       String?
+  title            String?
+  title_size       Int
+}
+
+model hero_config {
+  id           BigInt  @id
+  upper_title  String? @db.VarChar(255)
+  main_title   String? @db.VarChar(255)
+  italic_title String? @db.VarChar(255)
+  button_text  String? @db.VarChar(255)
+  button_link  String? @db.VarChar(255)
+  image_url    String? @db.VarChar(255)
+}
+
+model instagram_post {
+  id         BigInt  @id @default(autoincrement())
+  image_url  String? @db.VarChar(255)
+  post_url   String? @db.VarChar(255)
+  slot_index Int
+}
+
+model order_items {
+  id                BigInt   @id @default(autoincrement())
+  price_at_purchase Decimal  @db.Decimal(10, 2)
+  quantity          Int
+  subtotal          Decimal  @db.Decimal(10, 2)
+  order_id          BigInt
+  product_id        BigInt
+  orders            orders   @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkbioxgbv59vetrxe0ejfubep1w")
+  products          products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkocimc7dtr037rh4ls4l95nlfi")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model orders {
+  id              BigInt        @id @default(autoincrement())
+  created_at      DateTime?     @db.Timestamp(6)
+  order_number    String        @unique(map: "uknthkiu7pgmnqnu86i2jyoe2v7") @db.VarChar(20)
+  address_line    String
+  city            String        @db.VarChar(50)
+  district        String        @db.VarChar(50)
+  full_name       String        @db.VarChar(255)
+  phone           String        @db.VarChar(20)
+  postal_code     String?       @db.VarChar(10)
+  status          String        @db.VarChar(20)
+  total_price     Decimal       @db.Decimal(10, 2)
+  tracking_number String?       @db.VarChar(50)
+  updated_at      DateTime?     @db.Timestamp(6)
+  customer_id     BigInt
+  order_items     order_items[]
+  users           users         @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fksjfs85qf6vmcurlx43cnc16gy")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model product_gallery {
+  product_id BigInt
+  image_url  String?  @db.VarChar(255)
+  products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkb9ltc1coxby8e57tmrf7pkf22")
+
+  @@ignore
+}
+
+model products {
+  id                BigInt            @id @default(autoincrement())
+  color             String?           @db.VarChar(255)
+  description       String?
+  hover_image_url   String?           @db.VarChar(255)
+  image_url         String?           @db.VarChar(255)
+  material          String?           @db.VarChar(255)
+  price             Decimal?          @db.Decimal(38, 2)
+  size              String?           @db.VarChar(255)
+  stock_quantity    Int?
+  title             String?           @db.VarChar(255)
+  category_id       BigInt?
+  sku               String?           @unique @db.VarChar(255)
+  group_id          String?           @db.VarChar(255)
+  parent_product_id BigInt?
+  discounted_price  Decimal?          @db.Decimal(38, 2)
+  season_label      String?           @db.VarChar(255)
+  brand             String?           @db.VarChar(255)
+  cart_items        cart_items[]
+  order_items       order_items[]
+  product_gallery   product_gallery[] @ignore
+  categories        categories?       @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkog2rp4qthbtt2lfyhfo32lsw9")
+  slider_items      slider_items[]
+}
+
+model showcase_items {
+  id            BigInt  @id @default(autoincrement())
+  display_order Int
+  image_url     String? @db.VarChar(255)
+  subtitle      String? @db.VarChar(255)
+  target_slug   String? @db.VarChar(255)
+  title         String? @db.VarChar(255)
+}
+
+model slider_items {
+  id         BigInt    @id @default(autoincrement())
+  position   Int
+  product_id BigInt?
+  products   products? @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fkbcbo9lkk8jodvjv6spgge46hh")
+}
+
+model slider_settings {
+  id              BigInt  @id
+  sub_title       String? @db.VarChar(255)
+  title           String? @db.VarChar(255)
+  sub_title_color String? @db.VarChar(255)
+  sub_title_size  String? @db.VarChar(255)
+  title_color     String? @db.VarChar(255)
+  title_size      String? @db.VarChar(255)
+}
+
+model users {
+  id         BigInt    @id @default(autoincrement())
+  birth_date DateTime? @db.Date
+  created_at DateTime? @db.Timestamp(6)
+  email      String    @unique(map: "uk6dotkott2kjsp8vw4d0m25fb7") @db.VarChar(100)
+  first_name String    @db.VarChar(50)
+  last_login DateTime? @db.Timestamp(6)
+  last_name  String    @db.VarChar(50)
+  password   String    @db.VarChar(255)
+  phone      String?   @db.VarChar(20)
+  role       String    @db.VarChar(20)
+  updated_at DateTime? @db.Timestamp(6)
+  carts      carts?
+  orders     orders[]
+}
