@@ -18,9 +18,6 @@ export default function AdaStyleSlider() {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const isMoving = useRef(false);
-    const isDragging = useRef(false);
-    const startX = useRef(0);
-    const scrollLeftStart = useRef(0);
 
     const { addToCart, openCart } = useCart();
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -50,6 +47,7 @@ export default function AdaStyleSlider() {
                     seasonLabel: d.product.seasonLabel || d.tag || "",
                     productSubtitle: d.product.subtitle || d.subtitle || ""
                 }));
+                // Sonsuz döngü hissi için 3 set halinde birleştiriyoruz
                 setItems([...active, ...active, ...active]);
             })
             .catch(err => console.error("Slider fetch error:", err));
@@ -62,6 +60,7 @@ export default function AdaStyleSlider() {
         }
     }, [items.length]);
 
+    // Mobildeki akıcı kaydırmayı bozmamak için bu işlemi sadece scroll durduğunda veya sakinleştiğinde tetikliyoruz
     const handleInfiniteScroll = () => {
         const container = scrollContainerRef.current;
         if (!container) return;
@@ -89,49 +88,25 @@ export default function AdaStyleSlider() {
         }, 400);
     };
 
-    // Sürükleme Başlangıcı (Masaüstü & Mobil)
-    const handleDragStart = (clientX: number) => {
-        if (!scrollContainerRef.current) return;
-        isDragging.current = true;
-        startX.current = clientX - scrollContainerRef.current.offsetLeft;
-        scrollLeftStart.current = scrollContainerRef.current.scrollLeft;
-        scrollContainerRef.current.style.scrollBehavior = 'auto';
-    };
-
-    // Sürükleme Hareketi (Masaüstü & Mobil)
-    const handleDragMove = (clientX: number, e: any) => {
-        if (!isDragging.current || !scrollContainerRef.current) return;
-        // Mobil dikey kaydırmayı engellememek için preventDefault() kullanmıyoruz,
-        // ancak yatayda akıcılık için duruma göre yönetilebilir.
-        const x = clientX - scrollContainerRef.current.offsetLeft;
-        const walk = (x - startX.current) * 1.5; // Hassasiyet çarpanı
-        scrollContainerRef.current.scrollLeft = scrollLeftStart.current - walk;
-    };
-
-    // Sürükleme Bitişi (Masaüstü & Mobil)
-    const handleDragEnd = () => {
-        isDragging.current = false;
-        handleInfiniteScroll();
-    };
-
     if (items.length === 0) return null;
 
     return (
-        <section className="py-12 bg-white select-none">
-            <div className="max-w-[1536px] mx-auto px-4 md:px-6 relative group">
+        // Mobilde sağa sola taşma olmasın diye px-0 yaptık (Tam sınırlara dayansın)
+        <section className="py-12 bg-white select-none overflow-hidden">
+            <div className="w-full max-w-[1536px] mx-auto px-0 md:px-6 relative group">
 
                 {/* DİNAMİK BAŞLIK ALANI */}
-                <div className="flex flex-col items-center mb-10 text-center">
+                <div className="flex flex-col items-center mb-8 text-center px-4">
                     <h2
-                        className="font-light tracking-[0.2em] uppercase leading-tight"
-                        style={{ color: design.titleColor, fontSize: `${design.titleSize}px` }}
+                        className="font-light tracking-[0.2em] uppercase leading-tight text-xl md:text-2xl"
+                        style={{ color: design.titleColor }}
                     >
                         {design.title}
                     </h2>
                     {design.subTitle && (
                         <p
-                            className="mt-2 uppercase tracking-widest font-medium"
-                            style={{ color: design.subTitleColor, fontSize: `${design.subTitleSize}px` }}
+                            className="mt-2 uppercase tracking-widest font-medium text-xs md:text-sm"
+                            style={{ color: design.subTitleColor }}
                         >
                             {design.subTitle}
                         </p>
@@ -139,78 +114,67 @@ export default function AdaStyleSlider() {
                     <div className="w-12 h-[1px] bg-black mt-4"></div>
                 </div>
 
-                <button onClick={() => scroll('left')} className="hidden md:flex absolute left-4 top-[50%] z-20 w-11 h-11 items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white">
+                {/* Oklar sadece masaüstünde görünür */}
+                <button onClick={() => scroll('left')} className="hidden md:flex absolute left-4 top-[45%] z-20 w-11 h-11 items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white">
                     <ChevronLeft size={20} strokeWidth={1} />
                 </button>
-                <button onClick={() => scroll('right')} className="hidden md:flex absolute right-4 top-[50%] z-20 w-11 h-11 items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white">
+                <button onClick={() => scroll('right')} className="hidden md:flex absolute right-4 top-[45%] z-20 w-11 h-11 items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white">
                     <ChevronRight size={20} strokeWidth={1} />
                 </button>
 
+                {/* SLIDER KAPSAYICISI */}
                 <div
                     ref={scrollContainerRef}
-                    // touch-pan-y: Dikeyde normal sayfa kaydırmayı bozmaz, yatayda tarayıcı varsayılanını engeller
-                    // overflow-x-auto: Mobilde kendi doğal kaydırma (momentum scroll) yeteneğini açar
-                    className="flex overflow-x-auto gap-2 md:gap-6 cursor-grab active:cursor-grabbing pb-4 touch-pan-y"
-
-                    // Masaüstü Fare Olayları
-                    onMouseDown={(e) => handleDragStart(e.pageX)}
-                    onMouseMove={(e) => handleDragMove(e.pageX, e)}
-                    onMouseUp={handleDragEnd}
-                    onMouseLeave={handleDragEnd}
-
-                    // Mobil Dokunma Olayları
-                    onTouchStart={(e) => handleDragStart(e.touches[0].pageX)}
-                    onTouchMove={(e) => handleDragMove(e.touches[0].pageX, e)}
-                    onTouchEnd={handleDragEnd}
-
+                    // snap-x mandatory: Mobilde kaydırınca ürünün ortada şık diye durmasını sağlar
+                    // scroll-smooth ve webkit-overflow-scrolling: Mobildeki o kayma ivmesini (momentum) donmadan verir.
+                    className="flex overflow-x-auto gap-[2px] md:gap-6 pb-4 snap-x mandatory scroll-smooth overscroll-x-contain"
                     onScroll={handleInfiniteScroll}
+                    style={{ WebkitOverflowScrolling: 'touch' }}
                 >
                     {items.map((item, index) => {
                         const isOutOfStock = item.stockQuantity <= 0;
                         const hasDiscount = item.discountedPrice && item.discountedPrice < item.price;
 
                         return (
-                            <div key={`${item.id}-${index}`} className="flex-none w-[calc(50%-4px)] md:w-[calc(25%-18px)] group/card">
-                                {/* pointer-events-none ve user-select-none: Görsellerin ve linklerin kaydırmayı kitlemesini önler */}
-                                <div className="relative overflow-hidden bg-[#f7f7f7] select-none pointer-events-none md:pointer-events-auto">
+                            // Mobilde tam olarak ekranın yarısını kaplar (w-[calc(50%-1px)]) ve sınırlara kadar açılır
+                            <div
+                                key={`${item.id}-${index}`}
+                                className="flex-none w-[calc(50%-1px)] md:w-[calc(25%-18px)] snap-start group/card"
+                            >
+                                <div className="relative overflow-hidden bg-[#f7f7f7]">
 
                                     {/* SeasonLabel / Etiket */}
                                     {item.seasonLabel && !isOutOfStock && (
-                                        <div className="absolute top-3 left-3 z-10 bg-red-700 text-white px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
+                                        <div className="absolute top-2 left-2 z-10 bg-red-700 text-white px-2 py-0.5 text-[9px] tracking-tighter uppercase font-medium">
                                             {item.seasonLabel}
                                         </div>
                                     )}
 
                                     {isOutOfStock && (
-                                        <div className="absolute top-3 left-3 z-10 bg-gray-200 text-gray-600 px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
+                                        <div className="absolute top-2 left-2 z-10 bg-gray-200 text-gray-600 px-2 py-0.5 text-[9px] tracking-tighter uppercase font-medium">
                                             Tükendi
                                         </div>
                                     )}
 
-                                    <Link
-                                        href={`/product/${item.id}`}
-                                        className="block aspect-[3/4] relative overflow-hidden pointer-events-auto"
-                                        onClick={(e) => {
-                                            // Eğer kullanıcı kaydırıyorsa yanlışlıkla linke tıklayıp gitmesin
-                                            if (isDragging.current) e.preventDefault();
-                                        }}
-                                    >
+                                    {/* Görsellerin alanı mobilde de genişledi (3/4 oranında korundu) */}
+                                    <Link href={`/product/${item.id}`} className="block aspect-[3/4] relative overflow-hidden">
                                         <img
                                             src={fixUrl(item.imageUrl)}
-                                            className={`w-full h-full object-cover transition-opacity duration-700 ${item.hoverImageUrl && 'group-hover/card:opacity-0'}`}
+                                            className={`w-full h-full object-cover transition-opacity duration-500 ${item.hoverImageUrl && 'group-hover/card:opacity-0'}`}
                                             alt={item.title}
                                             draggable={false}
                                         />
                                         {item.hoverImageUrl && (
                                             <img
                                                 src={fixUrl(item.hoverImageUrl)}
-                                                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover/card:opacity-100 transition-opacity duration-700"
+                                                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover/card:opacity-100 transition-opacity duration-500"
                                                 alt={`${item.title} hover`}
                                                 draggable={false}
                                             />
                                         )}
                                     </Link>
 
+                                    {/* Sepete ekle butonu masaüstünde hover olunca açılır */}
                                     <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover/card:translate-y-0 transition-transform duration-300 ease-in-out z-20 hidden md:block">
                                         {isOutOfStock ? (
                                             <button className="w-full bg-white/90 backdrop-blur-md text-black py-4 text-[10px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
@@ -226,32 +190,33 @@ export default function AdaStyleSlider() {
                                         )}
                                     </div>
 
-                                    {/* FAVORİ BUTONU - Tıklanabilir olması için pointer-events-auto eklendi */}
-                                    <FavoriteButton productId={item.id} className="absolute top-3 right-3 z-10 pointer-events-auto" />
+                                    {/* FAVORİ BUTONU */}
+                                    <FavoriteButton productId={item.id} className="absolute top-2 right-2 z-10" />
                                 </div>
 
-                                <div className="mt-4 text-center px-1">
+                                {/* Ürün Bilgileri Bölümü */}
+                                <div className="mt-3 text-center px-2">
                                     {item.productSubtitle && (
-                                        <span className="block text-[9px] md:text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-1 font-light">
+                                        <span className="block text-[9px] md:text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-0.5 font-light">
                                             {item.productSubtitle}
                                         </span>
                                     )}
 
-                                    <h3 className="text-[11px] md:text-[12px] font-medium tracking-wider uppercase text-gray-700 line-clamp-1 leading-tight mb-1">
+                                    <h3 className="text-[11px] md:text-[12px] font-normal tracking-wider uppercase text-gray-700 line-clamp-1 leading-tight mb-1">
                                         {item.title}
                                     </h3>
                                     <div className="flex flex-col items-center gap-0.5">
                                         {hasDiscount ? (
                                             <div className="flex items-center gap-2">
-                                                <span className="text-gray-400 line-through text-[14px]">
+                                                <span className="text-gray-400 line-through text-[12px] md:text-[14px]">
                                                     {item.price.toLocaleString('tr-TR')} TL
                                                 </span>
-                                                <span className="text-red-600 font-bold text-[14px]">
+                                                <span className="text-red-600 font-medium text-[12px] md:text-[14px]">
                                                     {item.discountedPrice.toLocaleString('tr-TR')} TL
                                                 </span>
                                             </div>
                                         ) : (
-                                            <span className="text-gray-900 font-bold text-[13px]">
+                                            <span className="text-gray-900 font-medium text-[12px] md:text-[13px]">
                                                 {item.price.toLocaleString('tr-TR')} TL
                                             </span>
                                         )}
