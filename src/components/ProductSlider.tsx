@@ -232,5 +232,7 @@ export default function AdaStyleSlider() {
                 div::-webkit-scrollbar { display: none; }
             `}</style>
         </section>
+
+        
     );
 }
