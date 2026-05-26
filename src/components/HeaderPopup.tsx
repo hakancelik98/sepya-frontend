@@ -66,6 +66,13 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery]);
 
+    const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && searchQuery.trim().length > 0) {
+            handleClose();
+            router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
     const handleClose = async () => {
         if (subcategoryOpen) {
             setSubcategoryOpen(false);
@@ -122,6 +129,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                             placeholder="KOLEKSİYONDA ARA..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={handleSearchSubmit}
                                             className="w-full pl-7 py-3 bg-transparent border-b border-zinc-100 focus:border-black transition-all outline-none text-[10px] tracking-[0.2em] uppercase text-zinc-900"
                                         />
                                         {isSearching && <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={12}/>}
@@ -145,7 +153,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                                                             : `${ASSET_BASE}${product.imageUrl}`)
                                                                         : "/placeholder.jpg"
                                                                 }
-                                                                   alt="" fill className="object-cover"/>
+                                                                alt="" fill className="object-cover"/>
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className="text-[10px] font-bold uppercase truncate text-zinc-800 tracking-tight">{product.title}</p>

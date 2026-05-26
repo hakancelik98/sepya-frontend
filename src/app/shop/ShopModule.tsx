@@ -16,6 +16,7 @@ export default function ShopModule() {
     const brandQuery = searchParams.get("brand") || "tümü";
     const priceQuery = Number(searchParams.get("price")) || 20000;
     const sortQuery = searchParams.get("sort") || "Varsayılan";
+    const searchQuery = searchParams.get("search") || "";
 
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -85,6 +86,19 @@ export default function ShopModule() {
     const filteredProducts = useMemo(() => {
         let result = [...products];
 
+        // Arama Filtresi - Tüm alanları kontrol et
+        if (searchQuery) {
+            result = result.filter((p: any) => {
+                const query = searchQuery.toLowerCase();
+                return (
+                    p.title?.toLowerCase().includes(query) ||
+                    p.brand?.toLowerCase().includes(query) ||
+                    p.sku?.toLowerCase().includes(query) ||
+                    p.description?.toLowerCase().includes(query)
+                );
+            });
+        }
+
         // Kategori Filtresi - Hem ana hem alt kategorileri kontrol et
         if (categoryQuery) {
             result = result.filter((p: any) => {
@@ -113,15 +127,19 @@ export default function ShopModule() {
         }
 
         return result;
-    }, [products, categoryQuery, brandQuery, priceQuery, sortQuery]);
+    }, [products, searchQuery, categoryQuery, brandQuery, priceQuery, sortQuery]);
 
     // Tüm filtreleri sıfırla
     const clearAllFilters = useCallback(() => {
         setLocalPrice(20000);
-        router.push(pathname + (categoryQuery ? `?category=${categoryQuery}` : ""), { scroll: false });
+        const params = new URLSearchParams();
+        if (categoryQuery) {
+            params.set("category", categoryQuery);
+        }
+        router.push(pathname + (params.toString() ? `?${params.toString()}` : ""), { scroll: false });
     }, [router, pathname, categoryQuery]);
 
-    const hasActiveFilters = brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan";
+    const hasActiveFilters = brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan" || searchQuery;
 
     return (
         <div className="bg-white min-h-screen">
@@ -129,7 +147,9 @@ export default function ShopModule() {
             <div className="bg-white border-b border-slate-100 px-6 py-4 pt-10">
                 <div className="max-w-[1400px] mx-auto flex justify-between items-center">
                     <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-900">
-                        {categoryQuery ? categoryQuery.replace("-", " ") : "KOLEKSİYON"}
+                        {searchQuery
+                            ? `ARAMA: "${searchQuery}"`
+                            : (categoryQuery ? categoryQuery.replace("-", " ") : "KOLEKSİYON")}
                     </h1>
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -155,6 +175,7 @@ export default function ShopModule() {
                 sortBy={sortQuery}
                 setSortBy={(val: string) => updateURL("sort", val)}
                 activeCategory={categoryQuery}
+                searchQuery={searchQuery}
             />
 
             <main className="max-w-[1400px] mx-auto px-6 py-12">

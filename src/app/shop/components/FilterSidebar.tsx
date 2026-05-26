@@ -16,7 +16,8 @@ export default function FilterSidebar({
                                           setPriceRange,
                                           sortBy,
                                           setSortBy,
-                                          activeCategory
+                                          activeCategory,
+                                          searchQuery
                                       }: any) {
     const router = useRouter();
     const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
@@ -84,6 +85,15 @@ export default function FilterSidebar({
                     className="overflow-hidden bg-white border-b border-slate-200"
                 >
                     <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-4 gap-12">
+
+                        {/* Arama Sorgusu Göster */}
+                        {searchQuery && (
+                            <div className="md:col-span-4 bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                                <p className="text-[10px] text-slate-600 uppercase tracking-widest">
+                                    Arama Sonucu: <span className="font-black text-black">"{searchQuery}"</span>
+                                </p>
+                            </div>
+                        )}
 
                         {/* Kategori */}
                         <div className="space-y-4">
