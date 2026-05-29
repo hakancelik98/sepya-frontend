@@ -16,6 +16,7 @@ interface BrandItemProps {
     onDragStart?: (index: number) => void;
     onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
     onDrop?: (targetIndex: number) => void;
+
 }
 
 export default function BrandItem({
