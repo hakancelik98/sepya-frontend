@@ -19,6 +19,7 @@ export default function BrandManager() {
     const [items, setItems] = useState<BrandData[]>([]);
     const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
     useEffect(() => {
         fetchBrands();
@@ -132,6 +133,61 @@ export default function BrandManager() {
         setItems(newItems);
     };
 
+    const handleRemoveImage = (index: number) => {
+        if (!confirm("Görseli kaldırmak istediğinize emin misiniz?")) return;
+
+        const newItems = [...items];
+        newItems[index].imageUrl = "";
+        newItems[index].imagePreviewUrl = "";
+        newItems[index].newImage = undefined;
+        setItems(newItems);
+    };
+
+    const handleDragStart = (index: number) => {
+        setDraggedIdx(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = async (targetIndex: number) => {
+        if (draggedIdx === null || draggedIdx === targetIndex) {
+            setDraggedIdx(null);
+            return;
+        }
+
+        const newItems = [...items];
+        const draggedItem = newItems[draggedIdx];
+        newItems.splice(draggedIdx, 1);
+        newItems.splice(targetIndex, 0, draggedItem);
+
+        // Yeni sıralama düzenini ata
+        newItems.forEach((item, idx) => {
+            item.displayOrder = idx;
+        });
+
+        setItems(newItems);
+        setDraggedIdx(null);
+
+        // Her bir markayı API'ye gönder (order güncellemesi)
+        for (let i = 0; i < newItems.length; i++) {
+            const item = newItems[i];
+            if (item.id) {
+                try {
+                    await fetch(`${API_BASE}/brands/${item.id}/order?order=${i}`, {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+                } catch (err) {
+                    console.error("Sıralama güncellenirken hata:", err);
+                }
+            }
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white p-8">
             <div className="max-w-6xl mx-auto">
@@ -161,6 +217,11 @@ export default function BrandManager() {
                             onToggleStatus={handleToggleStatus}
                             onChange={handleFieldChange}
                             onImageChange={handleImageChange}
+                            onRemoveImage={handleRemoveImage}
+                            isDragging={draggedIdx === idx}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
                         />
                     ))}
                 </div>

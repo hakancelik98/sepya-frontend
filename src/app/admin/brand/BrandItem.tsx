@@ -10,7 +10,12 @@ interface BrandItemProps {
     onToggleStatus: (id: number) => Promise<void>;
     onChange: (index: number, field: string, value: string) => void;
     onImageChange: (index: number, file: File) => void;
+    onRemoveImage: (index: number) => void;
     loading: boolean;
+    isDragging?: boolean;
+    onDragStart?: (index: number) => void;
+    onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+    onDrop?: (targetIndex: number) => void;
 }
 
 export default function BrandItem({
@@ -21,7 +26,12 @@ export default function BrandItem({
                                       onToggleStatus,
                                       onChange,
                                       onImageChange,
-                                      loading
+                                      onRemoveImage,
+                                      loading,
+                                      isDragging,
+                                      onDragStart,
+                                      onDragOver,
+                                      onDrop
                                   }: BrandItemProps) {
 
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
@@ -38,7 +48,15 @@ export default function BrandItem({
     };
 
     return (
-        <div className="space-y-3 bg-gray-50 p-4 rounded-sm border border-gray-100">
+        <div
+            className={`space-y-3 bg-gray-50 p-4 rounded-sm border-2 transition-all ${
+                isDragging ? 'border-black bg-blue-50 opacity-50' : 'border-gray-100'
+            } cursor-grab active:cursor-grabbing`}
+            draggable
+            onDragStart={() => onDragStart?.(index)}
+            onDragOver={onDragOver}
+            onDrop={() => onDrop?.(index)}
+        >
             <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-gray-500">
                     <Type size={12} /> Marka Bilgileri
@@ -95,15 +113,24 @@ export default function BrandItem({
             <div className="flex items-center gap-3">
                 <div className="flex-shrink-0">
                     {(item.imagePreviewUrl || item.imageUrl) && (
-                        <div className="w-12 h-12 rounded border border-gray-200 overflow-hidden bg-white">
-                            <Image
-                                src={item.imagePreviewUrl || fixUrl(item.imageUrl)}
-                                alt={item.name || "Preview"}
-                                width={48}
-                                height={48}
-                                className="object-cover w-full h-full"
-                                unoptimized
-                            />
+                        <div className="relative">
+                            <div className="w-12 h-12 rounded border border-gray-200 overflow-hidden bg-white">
+                                <Image
+                                    src={item.imagePreviewUrl || fixUrl(item.imageUrl)}
+                                    alt={item.name || "Preview"}
+                                    width={48}
+                                    height={48}
+                                    className="object-cover w-full h-full"
+                                    unoptimized
+                                />
+                            </div>
+                            <button
+                                onClick={() => onRemoveImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-all shadow-md"
+                                title="Görseli Kaldır"
+                            >
+                                ✕
+                            </button>
                         </div>
                     )}
                 </div>
