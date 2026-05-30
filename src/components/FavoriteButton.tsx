@@ -8,16 +8,23 @@ import AuthModal from "@/components/AuthModal"; // AuthModal'ın yolunu kontrol 
 interface FavoriteButtonProps {
     productId: number;
     className?: string;
+    initialIsFavorite?: boolean; // Dışarıdan gelen başlangıç değeri (batch kontrolden)
 }
 
-export default function FavoriteButton({ productId, className = "" }: FavoriteButtonProps) {
-    const [isFavorite, setIsFavorite] = useState(false);
+export default function FavoriteButton({ productId, className = "", initialIsFavorite }: FavoriteButtonProps) {
+    const [isFavorite, setIsFavorite] = useState(initialIsFavorite ?? false);
     const [loading, setLoading] = useState(false);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // Modal state'i
 
     useEffect(() => {
-        checkIfFavorite();
-    }, [productId]);
+        // Eğer dışarıdan isFavorite değeri geçildiyse, API çağırma (batch kontrolden gelmiş demek)
+        if (initialIsFavorite !== undefined) {
+            setIsFavorite(initialIsFavorite);
+        } else {
+            // Değilse, kendi kontrol et
+            checkIfFavorite();
+        }
+    }, [productId, initialIsFavorite]);
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
