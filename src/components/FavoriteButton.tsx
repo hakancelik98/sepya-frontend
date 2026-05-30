@@ -3,21 +3,34 @@
 import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import AuthModal from "@/components/AuthModal"; // AuthModal'ın yolunu kontrol edin
+import AuthModal from "@/components/AuthModal";
 
 interface FavoriteButtonProps {
     productId: number;
+    isFavorite?: boolean;          // Opsiyonel: dışarıdan kontrol edilebilir
+    onToggle?: (e: React.MouseEvent) => void; // Opsiyonel: dışarıdan override edilebilir
     className?: string;
 }
 
-export default function FavoriteButton({ productId, className = "" }: FavoriteButtonProps) {
-    const [isFavorite, setIsFavorite] = useState(false);
+export default function FavoriteButton({
+                                           productId,
+                                           isFavorite: externalIsFavorite,   // Dışarıdan gelen favori state'i
+                                           onToggle: externalOnToggle,        // Dışarıdan gelen toggle fonksiyonu
+                                           className = ""
+                                       }: FavoriteButtonProps) {
+    const [internalIsFavorite, setInternalIsFavorite] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // Modal state'i
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+    // Dışarıdan prop geliyorsa onu, yoksa kendi state'ini kullan
+    const isFavorite = externalIsFavorite ?? internalIsFavorite;
 
     useEffect(() => {
-        checkIfFavorite();
-    }, [productId]);
+        // Sadece dışarıdan kontrol edilmiyorsa API'ye sor
+        if (externalIsFavorite === undefined) {
+            checkIfFavorite();
+        }
+    }, [productId, externalIsFavorite]);
 
     const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -26,29 +39,25 @@ export default function FavoriteButton({ productId, className = "" }: FavoriteBu
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await fetch(
-                `${API_BASE}/favorites/check/${productId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+            const res = await fetch(`${API_BASE}/favorites/check/${productId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             if (res.ok) {
                 const data = await res.json();
-                setIsFavorite(data.isFavorite);
+                setInternalIsFavorite(data.isFavorite);
             }
         } catch (error) {
             console.error("Favori kontrolü başarısız");
         }
     };
 
-    const handleToggle = async (e: React.MouseEvent) => {
+    const internalHandleToggle = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
 
         const token = localStorage.getItem("token");
 
-        // EĞER TOKEN YOKSA MODALI AÇ
         if (!token) {
             setIsAuthModalOpen(true);
             return;
@@ -57,21 +66,18 @@ export default function FavoriteButton({ productId, className = "" }: FavoriteBu
         setLoading(true);
 
         try {
-            const res = await fetch(
-                `${API_BASE}/favorites/toggle`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ productId })
-                }
-            );
+            const res = await fetch(`${API_BASE}/favorites/toggle`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ productId })
+            });
 
             if (res.ok) {
                 const data = await res.json();
-                setIsFavorite(data.isFavorite);
+                setInternalIsFavorite(data.isFavorite);
             }
         } catch (error) {
             console.error("Favori işlemi başarısız:", error);
@@ -79,6 +85,9 @@ export default function FavoriteButton({ productId, className = "" }: FavoriteBu
             setLoading(false);
         }
     };
+
+    // Dışarıdan onToggle geliyorsa onu kullan, yoksa kendi logic'ini çalıştır
+    const handleToggle = externalOnToggle ?? internalHandleToggle;
 
     return (
         <>
@@ -99,7 +108,6 @@ export default function FavoriteButton({ productId, className = "" }: FavoriteBu
                 />
             </motion.button>
 
-            {/* AUTH MODAL BİLEŞENİ */}
             <AnimatePresence>
                 {isAuthModalOpen && (
                     <AuthModal
