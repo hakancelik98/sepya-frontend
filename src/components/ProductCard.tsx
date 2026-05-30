@@ -18,9 +18,6 @@ interface ProductProps {
     brand?: { name: string };
     stockQuantity?: number;
     subtitle?: string;
-    isFavorite: boolean;
-    onToggleFavorite: (productId: number) => void;
-    isLoading?: boolean;
 }
 
 export default function ProductCard({
@@ -32,10 +29,7 @@ export default function ProductCard({
                                         imageUrl,
                                         hoverImageUrl,
                                         stockQuantity = 0,
-                                        subtitle,
-                                        isFavorite,
-                                        onToggleFavorite,
-                                        isLoading = false
+                                        subtitle
                                     }: ProductProps) {
     const [displayImage, setDisplayImage] = useState(imageUrl);
     const [isHovered, setIsHovered] = useState(false);
@@ -147,13 +141,7 @@ export default function ProductCard({
                 </div>
 
                 {/* FAVORİ BUTONU - FavoriteButton Component Kullanıldı */}
-                <FavoriteButton
-                    productId={id}
-                    isFavorite={isFavorite}
-                    onToggle={onToggleFavorite}
-                    loading={isLoading}
-                    className="absolute top-3 right-3 z-10"
-                />
+                <FavoriteButton productId={id} className="absolute top-3 right-3 z-10" />
             </div>
 
             {/* BİLGİ ALANI */}
