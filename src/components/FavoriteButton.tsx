@@ -20,7 +20,11 @@ export default function FavoriteButton({
                                        }: FavoriteButtonProps) {
     return (
         <motion.button
-            onClick={() => onToggle(productId)}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggle(productId);
+            }}
             disabled={loading}
             whileTap={{ scale: 0.9 }}
             className={`transition-colors disabled:opacity-50 ${className}`}

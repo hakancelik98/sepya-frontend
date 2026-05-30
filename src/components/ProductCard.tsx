@@ -20,6 +20,7 @@ interface ProductProps {
     subtitle?: string;
     isFavorite: boolean;
     onToggleFavorite: (productId: number) => void;
+    isLoading?: boolean;
 }
 
 export default function ProductCard({
@@ -33,7 +34,8 @@ export default function ProductCard({
                                         stockQuantity = 0,
                                         subtitle,
                                         isFavorite,
-                                        onToggleFavorite
+                                        onToggleFavorite,
+                                        isLoading = false
                                     }: ProductProps) {
     const [displayImage, setDisplayImage] = useState(imageUrl);
     const [isHovered, setIsHovered] = useState(false);
@@ -149,6 +151,7 @@ export default function ProductCard({
                     productId={id}
                     isFavorite={isFavorite}
                     onToggle={onToggleFavorite}
+                    loading={isLoading}
                     className="absolute top-3 right-3 z-10"
                 />
             </div>

@@ -86,9 +86,19 @@ export default function ProductList() {
                     {products.map((product: any) => (
                         <ProductCard
                             key={product.id}
-                            {...product}
+                            id={product.id}
+                            title={product.title}
+                            price={product.price}
+                            discountedPrice={product.discountedPrice}
+                            seasonLabel={product.seasonLabel}
+                            imageUrl={product.imageUrl}
+                            hoverImageUrl={product.hoverImageUrl}
+                            brand={product.brand}
+                            stockQuantity={product.stockQuantity}
+                            subtitle={product.subtitle}
                             isFavorite={favoriteIds.includes(product.id)}
                             onToggleFavorite={handleToggleFavorite}
+                            isLoading={loadingFavoriteId === product.id}
                         />
                     ))}
                 </div>
