@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
+import AuthModal from "@/components/AuthModal";
 
 export default function ProductList() {
     const [products, setProducts] = useState([]);
-    const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // Favori listesini burada tutacağız
+    const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+    const [loadingFavoriteId, setLoadingFavoriteId] = useState<number | null>(null);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -13,13 +16,12 @@ export default function ProductList() {
             .then((res) => res.json())
             .then((data) => {
                 setProducts(data);
-                // Ürünler gelince, favori kontrolünü toplu yap
                 checkFavoritesBatch(data);
             })
             .catch((err) => console.error("Veri çekme hatası:", err));
     }, []);
 
-    // 16 istek yerine tek bir istek atan fonksiyon
+    // Toplu favori kontrolü - tek istekte tüm ürünleri kontrol et
     const checkFavoritesBatch = async (products: any[]) => {
         const token = localStorage.getItem("token");
         if (!token || products.length === 0) return;
@@ -31,25 +33,74 @@ export default function ProductList() {
             });
             if (res.ok) {
                 const data = await res.json();
-                setFavoriteIds(data); // Favori olan ID'leri set et
+                setFavoriteIds(data);
             }
         } catch (err) {
             console.error("Batch favori hatası:", err);
         }
     };
 
+    // Toggle favori - favoriye ekleme/çıkarma
+    const handleToggleFavorite = async (productId: number) => {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            setIsAuthModalOpen(true);
+            return;
+        }
+
+        setLoadingFavoriteId(productId);
+
+        try {
+            const res = await fetch(`${BASE_URL}/favorites/toggle`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+
+                if (data.isFavorite) {
+                    // Favoriye eklendi
+                    setFavoriteIds([...favoriteIds, productId]);
+                } else {
+                    // Favoriden çıkarıldı
+                    setFavoriteIds(favoriteIds.filter(id => id !== productId));
+                }
+            }
+        } catch (error) {
+            console.error("Favori işlemi başarısız:", error);
+        } finally {
+            setLoadingFavoriteId(null);
+        }
+    };
+
     return (
-        <div className="w-full max-w-[1500px] mx-auto min-h-screen">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 p-2 md:p-10">
-                {products.map((product: any) => (
-                    <ProductCard
-                        key={product.id}
-                        {...product}
-                        // Favori durumunu yukarıdan gönderiyoruz
-                        isFavorite={favoriteIds.includes(product.id)}
-                    />
-                ))}
+        <>
+            <div className="w-full max-w-[1500px] mx-auto min-h-screen">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-8 p-2 md:p-10">
+                    {products.map((product: any) => (
+                        <ProductCard
+                            key={product.id}
+                            {...product}
+                            isFavorite={favoriteIds.includes(product.id)}
+                            onToggleFavorite={handleToggleFavorite}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+
+            {isAuthModalOpen && (
+                <AuthModal
+                    isOpen={isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen(false)}
+                    initialView="login"
+                />
+            )}
+        </>
     );
 }
