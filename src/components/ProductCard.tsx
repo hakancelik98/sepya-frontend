@@ -111,6 +111,7 @@ export default function ProductCard({
                         sizes="(max-width: 768px) 50vw, 25vw"
                         className="object-cover transition-opacity duration-700 group-hover/card:opacity-0"
                         priority
+                        unoptimized
                     />
                     {hoverImageUrl && (
                         <Image
@@ -119,6 +120,7 @@ export default function ProductCard({
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
                             className="object-cover opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 absolute inset-0"
+                            unoptimized
                         />
                     )}
                 </Link>
