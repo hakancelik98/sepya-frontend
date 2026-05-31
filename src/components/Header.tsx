@@ -16,6 +16,7 @@ const brandFont = Montserrat({ subsets: ["latin"], weight: ["300"] });
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [shrink, setShrink] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
     // ── AuthContext'ten kullanıcıyı oku (localStorage yerine) ─────────────────
     const { user, isAuthenticated, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -23,6 +24,18 @@ export default function Header() {
     const { settings } = useSettings();
 
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
+
+    useEffect(() => {
+        // Client-side'da mobile kontrolü
+        setIsMobile(window.innerWidth < 768);
+
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        window.addEventListener("resize", handleResize, { passive: true });
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => setShrink(window.scrollY > 10);
@@ -56,15 +69,13 @@ export default function Header() {
                     h-[85px] bg-white md:transition-all md:duration-300 ease-in-out`}
                     style={{
                         // Mobilde transform ile animate et (reflow yok)
-                        // Desktop'ta normal (md: breakpoint'ten sonra)
-                        transform: window.innerWidth < 768
+                        transform: isMobile
                             ? shrink
                                 ? "scaleY(0.647)" // 55/85 = 0.647
                                 : "scaleY(1)"
                             : "scaleY(1)",
                         transformOrigin: "top",
-                        transition: "transform 0.3s ease-in-out",
-                        transitionProperty: window.innerWidth < 768 ? "transform" : "height, background-color, box-shadow",
+                        transition: isMobile ? "transform 0.3s ease-in-out" : "height 0.3s ease-in-out, background-color 0.3s ease-in-out",
                     }}
                 >
                     {/* Sol */}
@@ -184,6 +195,5 @@ export default function Header() {
                 )}
             </AnimatePresence>
         </>
-
     );
 }
