@@ -1,11 +1,13 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function ProductGallery({ images, title }: { images: string[], title: string }) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [dragOffset, setDragOffset] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const startX = useRef(0);
+    const startY = useRef(0);
+    const isHorizontal = useRef<boolean | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const fixUrl = (path: string) => {
@@ -17,32 +19,58 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     };
 
     const goTo = (index: number) => {
-        const clamped = Math.max(0, Math.min(images.length - 1, index));
-        setActiveIndex(clamped);
+        setActiveIndex(Math.max(0, Math.min(images.length - 1, index)));
     };
+
+    // passive: false olmadan preventDefault çalışmaz
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const onTouchMove = (e: TouchEvent) => {
+            if (isHorizontal.current === true) {
+                e.preventDefault(); // yalnızca yatay sürükleme sırasında scroll'u engelle
+            }
+        };
+
+        el.addEventListener("touchmove", onTouchMove, { passive: false });
+        return () => el.removeEventListener("touchmove", onTouchMove);
+    }, []);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        isHorizontal.current = null; // yön henüz belli değil
         setIsDragging(true);
         setDragOffset(0);
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-        const diff = e.touches[0].clientX - startX.current;
-        // Başta ve sonda sürüklemeyi dirençli yap
-        if ((activeIndex === 0 && diff > 0) || (activeIndex === images.length - 1 && diff < 0)) {
-            setDragOffset(diff * 0.2);
+        const dx = e.touches[0].clientX - startX.current;
+        const dy = e.touches[0].clientY - startY.current;
+
+        // İlk harekette yönü belirle
+        if (isHorizontal.current === null) {
+            isHorizontal.current = Math.abs(dx) > Math.abs(dy);
+        }
+
+        if (!isHorizontal.current) return; // dikey hareket → dokunma
+
+        if ((activeIndex === 0 && dx > 0) || (activeIndex === images.length - 1 && dx < 0)) {
+            setDragOffset(dx * 0.2);
         } else {
-            setDragOffset(diff);
+            setDragOffset(dx);
         }
     };
 
     const handleTouchEnd = () => {
         setIsDragging(false);
-        const threshold = 50;
-        if (dragOffset < -threshold) goTo(activeIndex + 1);
-        else if (dragOffset > threshold) goTo(activeIndex - 1);
+        if (isHorizontal.current) {
+            if (dragOffset < -50) goTo(activeIndex + 1);
+            else if (dragOffset > 50) goTo(activeIndex - 1);
+        }
         setDragOffset(0);
+        isHorizontal.current = null;
     };
 
     if (!images || images.length === 0) return null;
@@ -60,9 +88,8 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
             >
-                {/* Tüm görseller yan yana tek şerit */}
                 <div
-                    className="flex h-full"
+                    className="flex items-start h-full"
                     style={{
                         width: `${images.length * 100}%`,
                         transform: `translateX(${translateX / images.length}%)`,
@@ -73,13 +100,13 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                     {images.map((img, idx) => (
                         <div
                             key={idx}
-                            className="relative flex items-center justify-center bg-white"
+                            className="flex items-start justify-center bg-white"
                             style={{ width: `${100 / images.length}%` }}
                         >
                             <img
                                 src={fixUrl(img)}
                                 alt={`${title} ${idx + 1}`}
-                                className="w-full h-auto md:h-[600px] md:object-contain block"
+                                className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
                                 draggable={false}
                             />
                         </div>
