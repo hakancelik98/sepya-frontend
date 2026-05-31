@@ -14,12 +14,14 @@ export default function ProductGallery({
     const fixUrl = (path: string) => {
         if (!path) return "";
         if (path.startsWith("http")) return path;
+
         const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL;
         const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
         return `${baseUrl}${cleanPath}`;
     };
 
-    // 🔥 PRELOAD (flicker azaltır)
+    // 🔥 PRELOAD (flicker fix)
     useEffect(() => {
         if (!images?.length) return;
 
@@ -29,7 +31,7 @@ export default function ProductGallery({
         });
     }, [images]);
 
-    // 🔥 SCROLL TRACK (stabil)
+    // 🔥 SCROLL TRACK (stable index)
     useEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -40,8 +42,14 @@ export default function ProductGallery({
             cancelAnimationFrame(rafId);
 
             rafId = requestAnimationFrame(() => {
-                const index = Math.round(el.scrollLeft / el.clientWidth);
-                setActiveIndex((prev) => (prev === index ? prev : index));
+                const slideWidth =
+                    el.firstElementChild?.clientWidth || el.clientWidth;
+
+                const index = Math.round(el.scrollLeft / slideWidth);
+
+                setActiveIndex((prev) =>
+                    prev === index ? prev : index
+                );
             });
         };
 
@@ -57,8 +65,11 @@ export default function ProductGallery({
         const el = scrollRef.current;
         if (!el) return;
 
+        const slideWidth =
+            el.firstElementChild?.clientWidth || el.clientWidth;
+
         el.scrollTo({
-            left: index * el.clientWidth,
+            left: index * slideWidth,
             behavior: "smooth",
         });
 
@@ -80,9 +91,8 @@ export default function ProductGallery({
             >
                 <div
                     ref={scrollRef}
-                    className="flex overflow-x-scroll md:overflow-hidden scroll-smooth"
+                    className="flex overflow-x-scroll snap-x snap-mandatory scroll-smooth"
                     style={{
-                        scrollSnapType: "x mandatory",
                         WebkitOverflowScrolling: "touch",
                         scrollbarWidth: "none",
                     }}
@@ -90,13 +100,12 @@ export default function ProductGallery({
                     {images.map((img, idx) => (
                         <div
                             key={idx}
-                            className="flex-shrink-0 bg-white"
+                            className="flex-shrink-0 snap-start bg-white"
                             style={{
                                 width: "100vw",
-                                scrollSnapAlign: "start",
                             }}
                         >
-                            {/* 🔥 FIX: sabit oran + CLS engelleme */}
+                            {/* 🔥 CLS FIX: sabit layout */}
                             <div className="relative w-full aspect-[3/4] md:h-[600px] md:aspect-auto">
                                 <img
                                     src={fixUrl(img)}
@@ -110,7 +119,7 @@ export default function ProductGallery({
                     ))}
                 </div>
 
-                {/* MOBİL DOT */}
+                {/* MOBİL DOTS */}
                 <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
                     <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
                         {images.map((_, idx) => (
@@ -127,7 +136,7 @@ export default function ProductGallery({
                 </div>
             </div>
 
-            {/* THUMBNAIL */}
+            {/* THUMBNAILS */}
             <div className="hidden md:flex flex-row flex-wrap justify-center gap-4 px-4 mt-4">
                 {images.map((img, idx) => (
                     <button
