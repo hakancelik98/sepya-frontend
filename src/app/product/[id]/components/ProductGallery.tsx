@@ -1,14 +1,9 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 
 export default function ProductGallery({ images, title }: { images: string[], title: string }) {
+    const scrollRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [dragOffset, setDragOffset] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const startX = useRef(0);
-    const startY = useRef(0);
-    const isHorizontal = useRef<boolean | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     const fixUrl = (path: string) => {
         if (!path) return "";
@@ -18,84 +13,55 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         return `${baseUrl}${cleanPath}`;
     };
 
-    const goTo = (index: number) => {
-        setActiveIndex(Math.max(0, Math.min(images.length - 1, index)));
-    };
-
     useEffect(() => {
-        const el = containerRef.current;
+        const el = scrollRef.current;
         if (!el) return;
-        const onTouchMove = (e: TouchEvent) => {
-            if (isHorizontal.current === true) e.preventDefault();
+
+        const onScroll = () => {
+            const index = Math.round(el.scrollLeft / el.offsetWidth);
+            setActiveIndex(index);
         };
-        el.addEventListener("touchmove", onTouchMove, { passive: false });
-        return () => el.removeEventListener("touchmove", onTouchMove);
+
+        el.addEventListener("scroll", onScroll, { passive: true });
+        return () => el.removeEventListener("scroll", onScroll);
     }, []);
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        startX.current = e.touches[0].clientX;
-        startY.current = e.touches[0].clientY;
-        isHorizontal.current = null;
-        setIsDragging(true);
-        setDragOffset(0);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        const dx = e.touches[0].clientX - startX.current;
-        const dy = e.touches[0].clientY - startY.current;
-        if (isHorizontal.current === null) {
-            isHorizontal.current = Math.abs(dx) > Math.abs(dy);
-        }
-        if (!isHorizontal.current) return;
-        if ((activeIndex === 0 && dx > 0) || (activeIndex === images.length - 1 && dx < 0)) {
-            setDragOffset(dx * 0.2);
-        } else {
-            setDragOffset(dx);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-        if (isHorizontal.current) {
-            if (dragOffset < -50) goTo(activeIndex + 1);
-            else if (dragOffset > 50) goTo(activeIndex - 1);
-        }
-        setDragOffset(0);
-        isHorizontal.current = null;
+    const goTo = (index: number) => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.scrollTo({ left: index * el.offsetWidth, behavior: "smooth" });
+        setActiveIndex(index);
     };
 
     if (!images || images.length === 0) return null;
 
-    // px cinsinden offset: activeIndex * 100vw - dragOffset
-    const translatePx = -(activeIndex * 100) + (dragOffset / (typeof window !== "undefined" ? window.innerWidth : 390)) * 100;
-
     return (
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
-            {/* Mobil slider — tam ekran genişliğinde, taşan kısım body tarafından kesilir */}
+            {/* ANA SLIDER — scroll-snap */}
             <div
-                ref={containerRef}
-                className="-mt-8 md:mt-0 relative md:h-[600px] bg-white"
+                className="-mt-8 md:mt-0 relative"
                 style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
             >
-                {/* Şerit: her slide tam 100vw */}
                 <div
-                    className="flex items-start"
+                    ref={scrollRef}
+                    className="flex overflow-x-scroll md:overflow-x-hidden"
                     style={{
-                        width: `${images.length * 100}vw`,
-                        transform: `translateX(calc(${translatePx}vw))`,
-                        transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
-                        willChange: "transform",
+                        scrollSnapType: "x mandatory",
+                        scrollBehavior: "smooth",
+                        WebkitOverflowScrolling: "touch",
+                        msOverflowStyle: "none",
+                        scrollbarWidth: "none",
                     }}
                 >
                     {images.map((img, idx) => (
                         <div
                             key={idx}
-                            className="flex items-start justify-center bg-white"
-                            style={{ width: "100vw" }}
+                            className="flex-shrink-0 flex items-start justify-center bg-white md:h-[600px]"
+                            style={{
+                                width: "100vw",
+                                scrollSnapAlign: "start",
+                            }}
                         >
                             <img
                                 src={fixUrl(img)}
@@ -106,6 +72,9 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                         </div>
                     ))}
                 </div>
+
+                {/* Scrollbar'ı gizle (webkit) */}
+                <style>{`.no-scrollbar::-webkit-scrollbar{display:none}`}</style>
 
                 {/* Mobil İndikatör */}
                 <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
@@ -129,7 +98,9 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                         key={idx}
                         onClick={() => goTo(idx)}
                         className={`relative w-24 h-28 transition-all duration-300 border-b-2 overflow-hidden ${
-                            activeIndex === idx ? "border-black opacity-100 scale-105" : "border-transparent opacity-40 hover:opacity-100"
+                            activeIndex === idx
+                                ? "border-black opacity-100 scale-105"
+                                : "border-transparent opacity-40 hover:opacity-100"
                         }`}
                     >
                         <img
