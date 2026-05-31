@@ -9,10 +9,8 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const fixUrl = (path: string) => {
         if (!path) return "";
         if (path.startsWith("http")) return path;
-
         const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL;
         const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
         return `${baseUrl}${cleanPath}`;
     };
 
@@ -20,7 +18,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         setPage([page + newDirection, newDirection]);
     };
 
-    const handleDragEnd = (event: any, info: any) => {
+    const handleDragEnd = (_event: any, info: any) => {
         const swipeThreshold = 50;
         if (info.offset.x < -swipeThreshold) paginate(1);
         else if (info.offset.x > swipeThreshold) paginate(-1);
@@ -29,30 +27,31 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const variants = {
         enter: (direction: number) => ({
             x: direction > 0 ? "100%" : "-100%",
-            opacity: 0
+            opacity: 1,
         }),
-        center: { x: 0, opacity: 1 },
+        center: {
+            x: 0,
+            opacity: 1,
+        },
         exit: (direction: number) => ({
             x: direction < 0 ? "100%" : "-100%",
-            opacity: 0
-        })
+            opacity: 1,
+        }),
     };
 
     if (!images || images.length === 0) return null;
 
     return (
-        /* Mobilde gap tamamen kaldırıldı (gap-0), masaüstünde md:gap-6 */
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
             {/* ANA GÖRSEL ALANI */}
             <div className="relative overflow-hidden
-                            /* Mobilde görseli header'a iyice yapıştırmak için -mt-8 */
                             -mt-8 md:mt-0
                             w-screen -ml-[50vw] left-1/2
                             md:w-full md:ml-0 md:left-0 md:h-[600px] md:aspect-auto bg-white">
 
                 <div className="w-full relative h-full flex items-center justify-center">
-                    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                    <AnimatePresence initial={false} custom={direction} mode="sync">
                         <motion.img
                             key={page}
                             src={fixUrl(images[activeIndex])}
@@ -62,13 +61,14 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                             animate="center"
                             exit="exit"
                             transition={{
-                                x: { type: "spring", stiffness: 300, damping: 30 },
-                                opacity: { duration: 0.2 }
+                                x: { type: "tween", ease: "easeInOut", duration: 0.3 },
+                                opacity: { duration: 0 },
                             }}
                             drag="x"
                             dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.15}
+                            dragElastic={0.1}
                             onDragEnd={handleDragEnd}
+                            style={{ willChange: "transform" }}
                             className="w-full h-auto md:h-full md:absolute md:inset-0 md:object-contain block cursor-grab active:cursor-grabbing"
                         />
                     </AnimatePresence>
