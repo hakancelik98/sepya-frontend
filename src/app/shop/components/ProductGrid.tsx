@@ -2,7 +2,13 @@
 import ProductCard from "@/components/ProductCard";
 import { PackageSearch } from "lucide-react";
 
-export default function ProductGrid({ products }: { products: any[] }) {
+export default function ProductGrid({
+                                        products,
+                                        onLoadMore
+                                    }: {
+    products: any[],
+    onLoadMore?: () => void
+}) {
     if (!products || products.length === 0) {
         return (
             <div className="w-full py-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/30">
@@ -13,10 +19,24 @@ export default function ProductGrid({ products }: { products: any[] }) {
     }
 
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
-            {products.map((p) => (
-                p && <ProductCard key={p.id} {...p} />
-            ))}
-        </div>
+        <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
+                {products.map((p, index) => (
+                    p && <ProductCard
+                        key={p.id}
+                        {...p}
+                        index={index}
+                    />
+                ))}
+            </div>
+
+            {/* Infinite scroll trigger element */}
+            {onLoadMore && (
+                <div
+                    className="w-full h-10 mt-12"
+                    id="load-more-trigger"
+                />
+            )}
+        </>
     );
 }
