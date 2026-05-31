@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingBag, ChevronRight, Mail, UserCircle2, ShieldCheck, Truck } from "lucide-react";
+import { ShoppingBag, ChevronRight, Mail, UserCircle2 } from "lucide-react";
 import AuthModal from "@/components/AuthModal";
 import { motion } from "framer-motion";
 
@@ -60,7 +60,7 @@ export default function AuthStep({
                                     <h3 className="text-[14px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
                                 </div>
 
-                                {/* Yeni Eklenen Avantajlar Bölümü */}
+                                {/* Avantajlar Bölümü */}
                                 <div className="space-y-3 md:space-y-4 mb-8">
                                     <div className="flex items-center gap-3">
                                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors" />
@@ -91,14 +91,20 @@ export default function AuthStep({
                         </div>
 
                         <div className="space-y-2 md:space-y-3">
-                            <div className="relative group">
-                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-black transition-colors" size={14} />
+                            {/* Zoom Engelleyici Yeni Kapsayıcı ve Input Yapısı */}
+                            <div className="relative group w-full bg-white border border-zinc-200 rounded-xl h-[46px] md:h-[54px] flex items-center overflow-hidden focus-within:border-black transition-all">
+                                <Mail className="absolute left-3.5 text-zinc-300 group-focus-within:text-black transition-colors z-10" size={14} />
                                 <input
                                     type="email"
                                     placeholder="E-POSTA ADRESİNİZ"
                                     value={guestEmail}
                                     onChange={(e) => setGuestEmail(e.target.value.toLowerCase())}
-                                    className="w-full bg-white border border-zinc-200 rounded-xl pl-10 pr-4 py-3 md:py-4 outline-none focus:border-black transition-all font-bold text-[10px] md:text-[11px] placeholder:text-zinc-300"
+                                    /*
+                                      - text-base (16px) ile mobil cihazların zoom yapması engellendi.
+                                      - scale ve width oranlarıyla görsel olarak eski küçük (10px-11px) haline getirildi.
+                                      - padding değerleri transform ölçeklemesine göre optimize edildi.
+                                    */
+                                    className="w-[160%] bg-transparent border-none outline-none text-base font-bold tracking-[0.2em] uppercase text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
                                 />
                             </div>
 
