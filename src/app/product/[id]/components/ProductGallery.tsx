@@ -1,27 +1,21 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-export default function ProductGallery({
-                                           images,
-                                           title,
-                                       }: {
-    images: string[];
-    title: string;
-}) {
+export default function ProductGallery({ images, title }: { images: string[]; title: string }) {
     const [index, setIndex] = useState(0);
     const [dragX, setDragX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-
     const startX = useRef(0);
+    const startY = useRef(0);
+    const isHorizontal = useRef<boolean | null>(null);
     const currentIndex = useRef(0);
+    const trackRef = useRef<HTMLDivElement>(null);
 
     const fixUrl = (path: string) => {
         if (!path) return "";
         if (path.startsWith("http")) return path;
-
         const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL;
         const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
         return `${baseUrl}${cleanPath}`;
     };
 
@@ -39,51 +33,60 @@ export default function ProductGallery({
     };
 
     const onTouchStart = (e: React.TouchEvent) => {
-        setIsDragging(true);
         startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        isHorizontal.current = null;
+        setIsDragging(true);
+        setDragX(0);
     };
 
     const onTouchMove = (e: React.TouchEvent) => {
         if (!isDragging) return;
+        const dx = e.touches[0].clientX - startX.current;
+        const dy = e.touches[0].clientY - startY.current;
 
-        const x = e.touches[0].clientX;
-        setDragX(x - startX.current);
+        if (isHorizontal.current === null) {
+            isHorizontal.current = Math.abs(dx) > Math.abs(dy);
+        }
+        if (!isHorizontal.current) return;
+
+        e.stopPropagation();
+        const resistance = (currentIndex.current === 0 && dx > 0) || (currentIndex.current === images.length - 1 && dx < 0);
+        setDragX(resistance ? dx * 0.2 : dx);
     };
 
     const onTouchEnd = () => {
         setIsDragging(false);
-
-        const threshold = 70;
-
-        if (dragX > threshold) {
-            goTo(currentIndex.current - 1);
-        } else if (dragX < -threshold) {
-            goTo(currentIndex.current + 1);
+        if (isHorizontal.current) {
+            if (dragX < -70) goTo(currentIndex.current + 1);
+            else if (dragX > 70) goTo(currentIndex.current - 1);
         }
-
         setDragX(0);
+        isHorizontal.current = null;
     };
 
     if (!images?.length) return null;
 
-    const offset =
-        -index * 100 + (dragX / (typeof window !== "undefined" ? window.innerWidth : 1)) * 100;
+    const containerWidth = trackRef.current?.offsetWidth || (typeof window !== "undefined" ? window.innerWidth : 390);
+    const offsetPx = -(index * containerWidth) + dragX;
 
     return (
-        <div className="w-full max-w-4xl mx-auto select-none">
+        <div className="w-full max-w-4xl mx-auto select-none flex flex-col gap-0 md:gap-6">
 
-            {/* VIEWPORT */}
-            <div className="relative overflow-hidden w-full">
-
+            {/* VIEWPORT — mobilde header'a yapışık, tam genişlik */}
+            <div
+                className="-mt-8 md:mt-0 relative overflow-hidden bg-white"
+                style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
+            >
                 {/* TRACK */}
                 <div
+                    ref={trackRef}
                     className="flex"
                     style={{
-                        width: `${images.length * 100}%`,
-                        transform: `translateX(${offset}%)`,
-                        transition: isDragging
-                            ? "none"
-                            : "transform 0.35s ease-out",
+                        width: `${images.length * 100}vw`,
+                        transform: `translateX(${offsetPx}px)`,
+                        transition: isDragging ? "none" : "transform 0.32s cubic-bezier(0.25, 1, 0.5, 1)",
+                        willChange: "transform",
                     }}
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
@@ -92,48 +95,46 @@ export default function ProductGallery({
                     {images.map((img, i) => (
                         <div
                             key={i}
-                            className="w-full flex-shrink-0 bg-white"
+                            className="flex-shrink-0 bg-white flex items-start justify-center"
+                            style={{ width: "100vw" }}
                         >
-                            {/* 🔥 FIX: ekrana tam oturan alan */}
-                            <div className="w-full h-[70vh] md:h-[600px] flex items-center justify-center bg-white">
-                                <img
-                                    src={fixUrl(img)}
-                                    alt={`${title} ${i + 1}`}
-                                    className="max-w-full max-h-full object-contain"
-                                    draggable={false}
-                                    loading="eager"
-                                />
-                            </div>
+                            <img
+                                src={fixUrl(img)}
+                                alt={`${title} ${i + 1}`}
+                                className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
+                                draggable={false}
+                                loading="eager"
+                                decoding="sync"
+                            />
                         </div>
                     ))}
                 </div>
+
+                {/* DOTS — mobilde görsel üzerinde */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
+                    <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
+                        {images.map((_, i) => (
+                            <div
+                                key={i}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                    index === i ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                                }`}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {/* DOTS */}
-            <div className="flex justify-center mt-3 gap-2">
-                {images.map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => goTo(i)}
-                        className={`h-1.5 rounded-full transition-all ${
-                            index === i
-                                ? "w-5 bg-black"
-                                : "w-2 bg-black/30"
-                        }`}
-                    />
-                ))}
-            </div>
-
-            {/* THUMBS */}
-            <div className="hidden md:flex justify-center gap-3 mt-4">
+            {/* THUMBS — masaüstü */}
+            <div className="hidden md:flex justify-center gap-3 mt-4 md:mt-0">
                 {images.map((img, i) => (
                     <button
                         key={i}
                         onClick={() => goTo(i)}
-                        className={`w-24 h-28 overflow-hidden border-b-2 transition ${
+                        className={`w-24 h-28 overflow-hidden border-b-2 transition-all duration-300 ${
                             index === i
-                                ? "border-black opacity-100"
-                                : "border-transparent opacity-40"
+                                ? "border-black opacity-100 scale-105"
+                                : "border-transparent opacity-40 hover:opacity-100"
                         }`}
                     >
                         <img
