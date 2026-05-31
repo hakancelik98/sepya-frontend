@@ -1,7 +1,13 @@
 "use client";
 import { useRef, useState, useEffect } from "react";
 
-export default function ProductGallery({ images, title }: { images: string[], title: string }) {
+export default function ProductGallery({
+                                           images,
+                                           title,
+                                       }: {
+    images: string[];
+    title: string;
+}) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -13,6 +19,17 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         return `${baseUrl}${cleanPath}`;
     };
 
+    // 🔥 PRELOAD (flicker azaltır)
+    useEffect(() => {
+        if (!images?.length) return;
+
+        images.forEach((img) => {
+            const image = new Image();
+            image.src = fixUrl(img);
+        });
+    }, [images]);
+
+    // 🔥 SCROLL TRACK (stabil)
     useEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -21,13 +38,15 @@ export default function ProductGallery({ images, title }: { images: string[], ti
 
         const onScroll = () => {
             cancelAnimationFrame(rafId);
+
             rafId = requestAnimationFrame(() => {
-                const index = Math.round(el.scrollLeft / el.offsetWidth);
-                setActiveIndex(prev => prev === index ? prev : index);
+                const index = Math.round(el.scrollLeft / el.clientWidth);
+                setActiveIndex((prev) => (prev === index ? prev : index));
             });
         };
 
         el.addEventListener("scroll", onScroll, { passive: true });
+
         return () => {
             el.removeEventListener("scroll", onScroll);
             cancelAnimationFrame(rafId);
@@ -37,55 +56,70 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const goTo = (index: number) => {
         const el = scrollRef.current;
         if (!el) return;
-        el.scrollTo({ left: index * el.offsetWidth });
+
+        el.scrollTo({
+            left: index * el.clientWidth,
+            behavior: "smooth",
+        });
+
         setActiveIndex(index);
     };
 
     if (!images || images.length === 0) return null;
 
     return (
-        <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
+        <div className="flex flex-col select-none w-full max-w-4xl mx-auto">
 
+            {/* GALERİ */}
             <div
-                className="-mt-8 md:mt-0 relative"
-                style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
+                className="relative"
+                style={{
+                    marginLeft: "calc(-50vw + 50%)",
+                    width: "100vw",
+                }}
             >
                 <div
                     ref={scrollRef}
-                    className="flex overflow-x-scroll md:overflow-x-hidden"
+                    className="flex overflow-x-scroll md:overflow-hidden scroll-smooth"
                     style={{
                         scrollSnapType: "x mandatory",
                         WebkitOverflowScrolling: "touch",
-                        msOverflowStyle: "none",
                         scrollbarWidth: "none",
                     }}
                 >
                     {images.map((img, idx) => (
                         <div
                             key={idx}
-                            className="flex-shrink-0 flex items-start justify-center bg-white md:h-[600px]"
-                            style={{ width: "100vw", scrollSnapAlign: "start" }}
+                            className="flex-shrink-0 bg-white"
+                            style={{
+                                width: "100vw",
+                                scrollSnapAlign: "start",
+                            }}
                         >
-                            <img
-                                src={fixUrl(img)}
-                                alt={`${title} ${idx + 1}`}
-                                className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
-                                draggable={false}
-                                loading="eager"
-                                decoding="sync"
-                            />
+                            {/* 🔥 FIX: sabit oran + CLS engelleme */}
+                            <div className="relative w-full aspect-[3/4] md:h-[600px] md:aspect-auto">
+                                <img
+                                    src={fixUrl(img)}
+                                    alt={`${title} ${idx + 1}`}
+                                    className="absolute inset-0 w-full h-full object-contain object-top"
+                                    draggable={false}
+                                    loading="eager"
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
 
-                {/* Mobil İndikatör */}
+                {/* MOBİL DOT */}
                 <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
                     <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
                         {images.map((_, idx) => (
                             <div
                                 key={idx}
                                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                                    activeIndex === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                                    activeIndex === idx
+                                        ? "w-5 bg-white"
+                                        : "w-1.5 bg-white/40"
                                 }`}
                             />
                         ))}
@@ -93,13 +127,13 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                 </div>
             </div>
 
-            {/* MASAÜSTÜ ALT GALERİ */}
-            <div className="hidden md:flex flex-row flex-wrap justify-center gap-4 px-4 mt-4 md:mt-0">
+            {/* THUMBNAIL */}
+            <div className="hidden md:flex flex-row flex-wrap justify-center gap-4 px-4 mt-4">
                 {images.map((img, idx) => (
                     <button
                         key={idx}
                         onClick={() => goTo(idx)}
-                        className={`relative w-24 h-28 transition-all duration-300 border-b-2 overflow-hidden ${
+                        className={`relative w-24 h-28 overflow-hidden transition-all duration-300 border-b-2 ${
                             activeIndex === idx
                                 ? "border-black opacity-100 scale-105"
                                 : "border-transparent opacity-40 hover:opacity-100"
