@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ProductGallery({
                                            images,
@@ -8,8 +8,12 @@ export default function ProductGallery({
     images: string[];
     title: string;
 }) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [activeIndex, setActiveIndex] = useState(0);
+    const [index, setIndex] = useState(0);
+    const [dragX, setDragX] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const startX = useRef(0);
+    const currentIndex = useRef(0);
 
     const fixUrl = (path: string) => {
         if (!path) return "";
@@ -21,95 +25,81 @@ export default function ProductGallery({
         return `${baseUrl}${cleanPath}`;
     };
 
-    // 🔥 PRELOAD (flicker fix)
+    // preload images
     useEffect(() => {
-        if (!images?.length) return;
-
-        images.forEach((img) => {
-            const image = new Image();
-            image.src = fixUrl(img);
+        images?.forEach((img) => {
+            const i = new Image();
+            i.src = fixUrl(img);
         });
     }, [images]);
 
-    // 🔥 SCROLL TRACK (stable index)
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (!el) return;
+    const goTo = (i: number) => {
+        if (i < 0 || i >= images.length) return;
+        setIndex(i);
+        currentIndex.current = i;
+    };
 
-        let rafId: number;
+    const onTouchStart = (e: React.TouchEvent) => {
+        setIsDragging(true);
+        startX.current = e.touches[0].clientX;
+    };
 
-        const onScroll = () => {
-            cancelAnimationFrame(rafId);
+    const onTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return;
 
-            rafId = requestAnimationFrame(() => {
-                const slideWidth =
-                    el.firstElementChild?.clientWidth || el.clientWidth;
+        const x = e.touches[0].clientX;
+        const diff = x - startX.current;
 
-                const index = Math.round(el.scrollLeft / slideWidth);
+        setDragX(diff);
+    };
 
-                setActiveIndex((prev) =>
-                    prev === index ? prev : index
-                );
-            });
-        };
+    const onTouchEnd = () => {
+        setIsDragging(false);
 
-        el.addEventListener("scroll", onScroll, { passive: true });
+        const threshold = 70;
 
-        return () => {
-            el.removeEventListener("scroll", onScroll);
-            cancelAnimationFrame(rafId);
-        };
-    }, []);
+        if (dragX > threshold) {
+            goTo(currentIndex.current - 1);
+        } else if (dragX < -threshold) {
+            goTo(currentIndex.current + 1);
+        }
 
-    const goTo = (index: number) => {
-        const el = scrollRef.current;
-        if (!el) return;
-
-        const slideWidth =
-            el.firstElementChild?.clientWidth || el.clientWidth;
-
-        el.scrollTo({
-            left: index * slideWidth,
-            behavior: "smooth",
-        });
-
-        setActiveIndex(index);
+        setDragX(0);
     };
 
     if (!images || images.length === 0) return null;
 
-    return (
-        <div className="flex flex-col select-none w-full max-w-4xl mx-auto">
+    const percentOffset = -index * 100 + (dragX / window.innerWidth) * 100;
 
-            {/* GALERİ */}
-            <div
-                className="relative"
-                style={{
-                    marginLeft: "calc(-50vw + 50%)",
-                    width: "100vw",
-                }}
-            >
+    return (
+        <div className="w-full max-w-4xl mx-auto select-none">
+
+            {/* VIEWPORT */}
+            <div className="relative overflow-hidden w-full">
+
+                {/* TRACK */}
                 <div
-                    ref={scrollRef}
-                    className="flex overflow-x-scroll snap-x snap-mandatory scroll-smooth"
+                    className="flex"
                     style={{
-                        WebkitOverflowScrolling: "touch",
-                        scrollbarWidth: "none",
+                        width: `${images.length * 100}%`,
+                        transform: `translateX(${percentOffset}%)`,
+                        transition: isDragging
+                            ? "none"
+                            : "transform 0.35s ease-out",
                     }}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
                 >
-                    {images.map((img, idx) => (
+                    {images.map((img, i) => (
                         <div
-                            key={idx}
-                            className="flex-shrink-0 snap-start bg-white"
-                            style={{
-                                width: "100vw",
-                            }}
+                            key={i}
+                            className="w-full flex-shrink-0 bg-white"
                         >
-                            {/* 🔥 CLS FIX: sabit layout */}
                             <div className="relative w-full aspect-[3/4] md:h-[600px] md:aspect-auto">
                                 <img
                                     src={fixUrl(img)}
-                                    alt={`${title} ${idx + 1}`}
+                                    alt={`${title} ${i + 1}`}
                                     className="absolute inset-0 w-full h-full object-contain object-top"
                                     draggable={false}
                                     loading="eager"
@@ -118,39 +108,37 @@ export default function ProductGallery({
                         </div>
                     ))}
                 </div>
+            </div>
 
-                {/* MOBİL DOTS */}
-                <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
-                    <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
-                        {images.map((_, idx) => (
-                            <div
-                                key={idx}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${
-                                    activeIndex === idx
-                                        ? "w-5 bg-white"
-                                        : "w-1.5 bg-white/40"
-                                }`}
-                            />
-                        ))}
-                    </div>
-                </div>
+            {/* DOTS */}
+            <div className="flex justify-center mt-3 gap-2">
+                {images.map((_, i) => (
+                    <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                            index === i
+                                ? "w-5 bg-black"
+                                : "w-2 bg-black/30"
+                        }`}
+                    />
+                ))}
             </div>
 
             {/* THUMBNAILS */}
-            <div className="hidden md:flex flex-row flex-wrap justify-center gap-4 px-4 mt-4">
-                {images.map((img, idx) => (
+            <div className="hidden md:flex justify-center gap-3 mt-4">
+                {images.map((img, i) => (
                     <button
-                        key={idx}
-                        onClick={() => goTo(idx)}
-                        className={`relative w-24 h-28 overflow-hidden transition-all duration-300 border-b-2 ${
-                            activeIndex === idx
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className={`w-24 h-28 overflow-hidden border-b-2 transition-all ${
+                            index === i
                                 ? "border-black opacity-100 scale-105"
-                                : "border-transparent opacity-40 hover:opacity-100"
+                                : "border-transparent opacity-40"
                         }`}
                     >
                         <img
                             src={fixUrl(img)}
-                            alt={`Thumb ${idx}`}
                             className="w-full h-full object-cover"
                             draggable={false}
                         />
