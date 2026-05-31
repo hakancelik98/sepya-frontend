@@ -37,7 +37,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const goTo = (index: number) => {
         const el = scrollRef.current;
         if (!el) return;
-        el.scrollTo({ left: index * el.offsetWidth, behavior: "smooth" });
+        el.scrollTo({ left: index * el.offsetWidth });
         setActiveIndex(index);
     };
 
@@ -55,7 +55,6 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                     className="flex overflow-x-scroll md:overflow-x-hidden"
                     style={{
                         scrollSnapType: "x mandatory",
-                        scrollBehavior: "smooth",
                         WebkitOverflowScrolling: "touch",
                         msOverflowStyle: "none",
                         scrollbarWidth: "none",
