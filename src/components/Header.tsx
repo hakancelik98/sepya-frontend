@@ -17,6 +17,7 @@ export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [shrink, setShrink] = useState(false);
     const scrollTimeoutRef = useRef<NodeJS.Timeout>(null);
+    const isScrollingRef = useRef(false);
 
     // ── AuthContext'ten kullanıcıyı oku (localStorage yerine) ─────────────────
     const { user, isAuthenticated, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -31,15 +32,31 @@ export default function Header() {
         const handleScroll = () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    setShrink(window.scrollY > 10);
+                    // Scroll momentum sırasında state değişimini ertele
+                    if (!isScrollingRef.current) {
+                        setShrink(window.scrollY > 10);
+                    }
                     ticking = false;
                 });
                 ticking = true;
             }
+
+            // Momentum scroll bitene kadar scrolling flag'ini tut
+            isScrollingRef.current = true;
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+
+            scrollTimeoutRef.current = setTimeout(() => {
+                isScrollingRef.current = false;
+                // Momentum bitince son pozisyona göre state'i güncelle
+                setShrink(window.scrollY > 10);
+            }, 150);
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        };
     }, []);
 
     return (
