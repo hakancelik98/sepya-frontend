@@ -43,7 +43,7 @@ export default function Header() {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="overflow-hidden hidden md:block"
+                            className="overflow-hidden"
                         >
                             <AnnouncementBar />
                         </motion.div>
@@ -51,9 +51,21 @@ export default function Header() {
                 </AnimatePresence>
 
                 <div
-                    className={`w-full flex items-center justify-between px-8 transition-all ease-in-out
-                    ${shrink ? "h-[55px] bg-white/95 backdrop-blur-md shadow-sm" : "h-[85px] bg-white"}
-                    md:duration-300 duration-150`}
+                    className={`w-full flex items-center justify-between px-8 origin-top
+                    ${shrink ? "md:h-[55px] md:bg-white/95 md:backdrop-blur-md md:shadow-sm" : "md:h-[85px] md:bg-white"}
+                    h-[85px] bg-white md:transition-all md:duration-300 ease-in-out`}
+                    style={{
+                        // Mobilde transform ile animate et (reflow yok)
+                        // Desktop'ta normal (md: breakpoint'ten sonra)
+                        transform: window.innerWidth < 768
+                            ? shrink
+                                ? "scaleY(0.647)" // 55/85 = 0.647
+                                : "scaleY(1)"
+                            : "scaleY(1)",
+                        transformOrigin: "top",
+                        transition: "transform 0.3s ease-in-out",
+                        transitionProperty: window.innerWidth < 768 ? "transform" : "height, background-color, box-shadow",
+                    }}
                 >
                     {/* Sol */}
                     <div className="flex items-center gap-6 flex-1">
