@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -16,7 +16,6 @@ const brandFont = Montserrat({ subsets: ["latin"], weight: ["300"] });
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [shrink, setShrink] = useState(false);
-    const lastScrollYRef = useRef(0);
 
     // ── AuthContext'ten kullanıcıyı oku (localStorage yerine) ─────────────────
     const { user, isAuthenticated, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -26,32 +25,7 @@ export default function Header() {
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
 
     useEffect(() => {
-        let ticking = false;
-        const SCROLL_THRESHOLD = 5; // Küçük jitter'ları ignore et
-
-        const handleScroll = () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const currentScrollY = window.scrollY;
-                    const scrollDelta = Math.abs(currentScrollY - lastScrollYRef.current);
-
-                    // Threshold'dan büyük kaydırmaları tespit et
-                    if (scrollDelta > SCROLL_THRESHOLD) {
-                        if (currentScrollY > lastScrollYRef.current) {
-                            // ↑ YUKARI kaydırıyor → Header KAPAT
-                            setShrink(true);
-                        } else {
-                            // ↓ AŞAĞI kaydırıyor → Header AÇ
-                            setShrink(false);
-                        }
-                        lastScrollYRef.current = currentScrollY;
-                    }
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
-
+        const handleScroll = () => setShrink(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
@@ -69,7 +43,7 @@ export default function Header() {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="overflow-hidden"
+                            className="overflow-hidden hidden md:block"
                         >
                             <AnnouncementBar />
                         </motion.div>
