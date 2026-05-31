@@ -16,7 +16,7 @@ const brandFont = Montserrat({ subsets: ["latin"], weight: ["300"] });
 export default function Header() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [shrink, setShrink] = useState(false);
-    const scrollTimeoutRef = useRef<NodeJS.Timeout>(null);
+    const lastScrollYRef = useRef(0);
 
     // ── AuthContext'ten kullanıcıyı oku (localStorage yerine) ─────────────────
     const { user, isAuthenticated, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
@@ -27,11 +27,25 @@ export default function Header() {
 
     useEffect(() => {
         let ticking = false;
+        const SCROLL_THRESHOLD = 5; // Küçük jitter'ları ignore et
 
         const handleScroll = () => {
             if (!ticking) {
                 window.requestAnimationFrame(() => {
-                    setShrink(window.scrollY > 10);
+                    const currentScrollY = window.scrollY;
+                    const scrollDelta = Math.abs(currentScrollY - lastScrollYRef.current);
+
+                    // Threshold'dan büyük kaydırmaları tespit et
+                    if (scrollDelta > SCROLL_THRESHOLD) {
+                        if (currentScrollY > lastScrollYRef.current) {
+                            // ↑ YUKARI kaydırıyor → Header KAPAT
+                            setShrink(true);
+                        } else {
+                            // ↓ AŞAĞI kaydırıyor → Header AÇ
+                            setShrink(false);
+                        }
+                        lastScrollYRef.current = currentScrollY;
+                    }
                     ticking = false;
                 });
                 ticking = true;
@@ -46,20 +60,16 @@ export default function Header() {
         <>
             <header
                 className="fixed top-0 left-0 w-full z-50 flex flex-col"
-                style={{
-                    willChange: "transform",
-                    contain: "layout paint style"
-                }}
+                style={{ willChange: "transform" }}
             >
                 <AnimatePresence mode="wait">
                     {!shrink && (
                         <motion.div
-                            initial={{ scaleY: 0, opacity: 0 }}
-                            animate={{ scaleY: 1, opacity: 1 }}
-                            exit={{ scaleY: 0, opacity: 0 }}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="origin-top"
-                            style={{ transformPerspective: "1000px" }}
+                            className="overflow-hidden"
                         >
                             <AnnouncementBar />
                         </motion.div>
@@ -69,7 +79,6 @@ export default function Header() {
                 <div
                     className={`w-full flex items-center justify-between px-8 transition-all duration-300 ease-in-out
                     ${shrink ? "h-[55px] bg-white/95 backdrop-blur-md shadow-sm" : "h-[85px] bg-white"}`}
-                    style={{ willChange: "height, background-color" }}
                 >
                     {/* Sol */}
                     <div className="flex items-center gap-6 flex-1">
