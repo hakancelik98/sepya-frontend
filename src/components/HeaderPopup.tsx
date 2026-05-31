@@ -122,19 +122,25 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
 
                                 {/* 1. ARAMA */}
                                 <div className="relative mb-12 shrink-0" ref={searchRef}>
-                                    <div className="relative">
-                                        <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-400" size={14}/>
+                                    <div className="relative flex items-center h-10 border-b border-zinc-100 focus-within:border-black transition-all">
+                                        <Search className="absolute left-0 text-zinc-400" size={14}/>
                                         <input
                                             type="text"
                                             placeholder="KOLEKSİYONDA ARA..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             onKeyDown={handleSearchSubmit}
-                                            className="w-full pl-7 py-3 bg-transparent border-b border-zinc-100 focus:border-black transition-all outline-none text-[10px] tracking-[0.2em] uppercase text-zinc-900"
+                                            /*
+                                              Aşağıdaki sınıflarda font boyutu tarayıcı zoom yapmasın diye text-base (16px) yapıldı.
+                                              Visual (görsel) olarak eski 10px boyutuna sadık kalmak için origin-left ile sola yaslanıp
+                                              scale-[0.625] (%62.5) oranında küçültüldü. Genişlik ise küçülmeden kaynaklı kısalmasın diye %160 yapıldı.
+                                            */
+                                            className="w-[160%] pl-11 bg-transparent border-none outline-none text-base tracking-[0.3em] uppercase text-zinc-900 transform origin-left scale-[0.625]"
                                         />
-                                        {isSearching && <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 animate-spin text-zinc-400" size={12}/>}
+                                        {isSearching && <Loader2 className="absolute right-0 animate-spin text-zinc-400" size={12}/>}
                                     </div>
 
+                                    {/* Arama Sonuçları Paneli (Burası aynı kalıyor) */}
                                     <AnimatePresence>
                                         {searchResults.length > 0 && (
                                             <motion.div
