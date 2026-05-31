@@ -1,10 +1,12 @@
 "use client";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
 
 export default function ProductGallery({ images, title }: { images: string[], title: string }) {
-    const [[page, direction], setPage] = useState([0, 0]);
-    const activeIndex = ((page % images.length) + images.length) % images.length;
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [dragOffset, setDragOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const startX = useRef(0);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const fixUrl = (path: string) => {
         if (!path) return "";
@@ -14,68 +16,78 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         return `${baseUrl}${cleanPath}`;
     };
 
-    const paginate = (newDirection: number) => {
-        setPage([page + newDirection, newDirection]);
+    const goTo = (index: number) => {
+        const clamped = Math.max(0, Math.min(images.length - 1, index));
+        setActiveIndex(clamped);
     };
 
-    const handleDragEnd = (_event: any, info: any) => {
-        const swipeThreshold = 50;
-        if (info.offset.x < -swipeThreshold) paginate(1);
-        else if (info.offset.x > swipeThreshold) paginate(-1);
+    const handleTouchStart = (e: React.TouchEvent) => {
+        startX.current = e.touches[0].clientX;
+        setIsDragging(true);
+        setDragOffset(0);
     };
 
-    const variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? "100%" : "-100%",
-            opacity: 1,
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-        },
-        exit: (direction: number) => ({
-            x: direction < 0 ? "100%" : "-100%",
-            opacity: 1,
-        }),
+    const handleTouchMove = (e: React.TouchEvent) => {
+        const diff = e.touches[0].clientX - startX.current;
+        // Başta ve sonda sürüklemeyi dirençli yap
+        if ((activeIndex === 0 && diff > 0) || (activeIndex === images.length - 1 && diff < 0)) {
+            setDragOffset(diff * 0.2);
+        } else {
+            setDragOffset(diff);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        const threshold = 50;
+        if (dragOffset < -threshold) goTo(activeIndex + 1);
+        else if (dragOffset > threshold) goTo(activeIndex - 1);
+        setDragOffset(0);
     };
 
     if (!images || images.length === 0) return null;
+
+    const translateX = -(activeIndex * 100) + (dragOffset / (containerRef.current?.offsetWidth || 390)) * 100;
 
     return (
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
             {/* ANA GÖRSEL ALANI */}
-            <div className="relative overflow-hidden
-                            -mt-8 md:mt-0
-                            w-screen -ml-[50vw] left-1/2
-                            md:w-full md:ml-0 md:left-0 md:h-[600px] md:aspect-auto bg-white">
-
-                <div className="w-full relative h-full flex items-center justify-center">
-                    <AnimatePresence initial={false} custom={direction} mode="sync">
-                        <motion.img
-                            key={page}
-                            src={fixUrl(images[activeIndex])}
-                            custom={direction}
-                            variants={variants}
-                            initial="enter"
-                            animate="center"
-                            exit="exit"
-                            transition={{
-                                x: { type: "tween", ease: "easeInOut", duration: 0.3 },
-                                opacity: { duration: 0 },
-                            }}
-                            drag="x"
-                            dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={0.1}
-                            onDragEnd={handleDragEnd}
-                            style={{ willChange: "transform" }}
-                            className="w-full h-auto md:h-full md:absolute md:inset-0 md:object-contain block cursor-grab active:cursor-grabbing"
-                        />
-                    </AnimatePresence>
+            <div
+                ref={containerRef}
+                className="relative overflow-hidden -mt-8 md:mt-0 w-screen -ml-[50vw] left-1/2 md:w-full md:ml-0 md:left-0 md:h-[600px] bg-white"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Tüm görseller yan yana tek şerit */}
+                <div
+                    className="flex h-full"
+                    style={{
+                        width: `${images.length * 100}%`,
+                        transform: `translateX(${translateX / images.length}%)`,
+                        transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+                        willChange: "transform",
+                    }}
+                >
+                    {images.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className="relative flex items-center justify-center bg-white"
+                            style={{ width: `${100 / images.length}%` }}
+                        >
+                            <img
+                                src={fixUrl(img)}
+                                alt={`${title} ${idx + 1}`}
+                                className="w-full h-auto md:h-[600px] md:object-contain block"
+                                draggable={false}
+                            />
+                        </div>
+                    ))}
                 </div>
 
-                {/* Mobil Sayfa İndikatörü */}
-                <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5 md:hidden z-10">
+                {/* Mobil İndikatör */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
                     <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
                         {images.map((_, idx) => (
                             <div
@@ -94,10 +106,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                 {images.map((img, idx) => (
                     <button
                         key={idx}
-                        onClick={() => {
-                            const dir = idx > activeIndex ? 1 : -1;
-                            setPage([idx, dir]);
-                        }}
+                        onClick={() => goTo(idx)}
                         className={`relative w-24 h-28 transition-all duration-300 border-b-2 overflow-hidden ${
                             activeIndex === idx ? "border-black opacity-100 scale-105" : "border-transparent opacity-40 hover:opacity-100"
                         }`}
@@ -106,6 +115,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                             src={fixUrl(img)}
                             alt={`Thumb ${idx}`}
                             className="w-full h-full object-cover"
+                            draggable={false}
                         />
                     </button>
                 ))}
