@@ -18,7 +18,6 @@ export default function Header() {
     const [shrink, setShrink] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
-    // ── AuthContext'ten kullanıcıyı oku (localStorage yerine) ─────────────────
     const { user, isAuthenticated, isAuthModalOpen, authModalView, openAuthModal, closeAuthModal } = useAuth();
     const { itemCount, openCart } = useCart();
     const { settings } = useSettings();
@@ -26,48 +25,30 @@ export default function Header() {
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
 
     useEffect(() => {
-        // Client-side'da mobile kontrolü
-        setIsMobile(window.innerWidth < 768);
-
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-
-        window.addEventListener("resize", handleResize, { passive: true });
-        return () => window.removeEventListener("resize", handleResize);
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
     useEffect(() => {
-        let lastShrinkState = false;
-
-        const handleScroll = () => {
-            const shouldShrink = window.scrollY > 10;
-
-            // State SADECE değişim gerektiğinde update et
-            if (shouldShrink !== lastShrinkState) {
-                setShrink(shouldShrink);
-                lastShrinkState = shouldShrink;
-            }
-        };
-
+        const handleScroll = () => setShrink(window.scrollY > 10);
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    const showAnnouncement = !shrink || isMobile;
+
     return (
         <>
-            <header
-                className="fixed top-0 left-0 w-full z-50 flex flex-col"
-                style={{ willChange: "transform" }}
-            >
-                <AnimatePresence mode="wait">
-                    {!shrink && (
+            <header className="fixed top-0 left-0 w-full z-50 flex flex-col">
+                <AnimatePresence>
+                    {showAnnouncement && (
                         <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="overflow-hidden"
+                            transition={{ duration: 0.4 }}
                         >
                             <AnnouncementBar />
                         </motion.div>
@@ -75,28 +56,19 @@ export default function Header() {
                 </AnimatePresence>
 
                 <div
-                    className={`w-full flex items-center justify-between px-8 origin-top
-                    ${shrink ? "md:h-[55px] md:bg-white/95 md:backdrop-blur-md md:shadow-sm" : "md:h-[85px] md:bg-white"}
-                    h-[85px] bg-white md:transition-all md:duration-300 ease-in-out`}
-                    style={{
-                        // Mobilde transform ile animate et (reflow yok)
-                        transform: isMobile
-                            ? shrink
-                                ? "scaleY(0.647)" // 55/85 = 0.647
-                                : "scaleY(1)"
-                            : "scaleY(1)",
-                        transformOrigin: "top",
-                        transition: isMobile ? "transform 0.3s ease-in-out" : "height 0.3s ease-in-out, background-color 0.3s ease-in-out",
-                    }}
+                    className={`w-full transition-all duration-500 ease-in-out flex items-center justify-between px-8
+                    ${
+                        shrink
+                            ? "h-[55px] bg-white/95 backdrop-blur-md shadow-sm"
+                            : isMobile
+                                ? "h-[55px] bg-white"
+                                : "h-[85px] bg-white"
+                    }`}
                 >
                     {/* Sol */}
                     <div className="flex items-center gap-6 flex-1">
-                        <button
-                            onClick={() => setMenuOpen(true)}
-                            className="hover:opacity-60 transition p-1"
-                            aria-label="Menu aç"
-                        >
-                            <Image src="/menu.png" alt="" width={20} height={20} />
+                        <button onClick={() => setMenuOpen(true)} className="hover:opacity-60 transition">
+                            <Image src="/menu.png" alt="Menu" width={20} height={20} />
                         </button>
 
                         {settings?.contactPhone && (
@@ -104,19 +76,23 @@ export default function Header() {
                                 href={`https://wa.me/${settings.contactPhone.replace(/\D/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:opacity-60 transition p-1"
-                                aria-label="WhatsApp ile iletişime geç"
+                                className="hover:opacity-60 transition"
                             >
-                                <Image src="/whatsapp.png" alt="" width={28} height={28} />
+                                <Image
+                                    src="/whatsapp.png"
+                                    alt="WhatsApp"
+                                    width={28}
+                                    height={28}
+                                />
                             </a>
                         )}
                     </div>
 
                     {/* Orta */}
-                    <div className="flex-[2] md:flex-1 flex justify-center items-center min-w-0">
+                    <div className="flex-[2] md:flex-1 flex justify-center items-center">
                         <Link href="/" className="flex items-center justify-center">
-                            {!shrink && settings?.logoUrl ? (
-                                <div className="relative h-[80px] w-[80px] flex-shrink-0">
+                            {!shrink && !isMobile && settings?.logoUrl ? (
+                                <div className="relative h-[80px] w-[80px]">
                                     <Image
                                         src={
                                             settings.logoUrl.startsWith("http")
@@ -143,44 +119,36 @@ export default function Header() {
                     <div className="flex items-center gap-6 flex-1 justify-end">
                         <div className="flex items-center gap-2">
                             {isAuthenticated && user ? (
-                                // ✅ Giriş yapılmış: profile linki
-                                <Link href="/profile" className="flex items-center gap-2 group p-1">
+                                <Link href="/profile" className="flex items-center gap-2 group">
                                     <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-black border-b border-transparent group-hover:border-black transition-all">
                                         {user.firstName}
                                     </span>
                                     <Image
                                         src="/user.png"
-                                        alt=""
+                                        alt="User"
                                         width={20}
                                         height={20}
                                         className="hover:opacity-60 transition"
                                     />
                                 </Link>
                             ) : (
-                                // ✅ Giriş yapılmamış: login modal aç
                                 <button
                                     onClick={() => openAuthModal("login")}
-                                    className="hover:opacity-60 transition p-1"
-                                    aria-label="Giriş yap"
+                                    className="hover:opacity-60 transition"
                                 >
-                                    <Image src="/user.png" alt="" width={20} height={20} />
+                                    <Image src="/user.png" alt="User" width={20} height={20} />
                                 </button>
                             )}
                         </div>
 
-                        <button
-                            onClick={openCart}
-                            className="relative group hover:opacity-60 transition p-1"
-                            aria-label={`Sepeti aç (${itemCount} ürün)`}
-                        >
-                            <Image src="/market.png" alt="" width={20} height={20} />
+                        <button onClick={openCart} className="relative group hover:opacity-60 transition">
+                            <Image src="/market.png" alt="Cart" width={20} height={20} />
                             <AnimatePresence>
                                 {itemCount > 0 && (
                                     <motion.span
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         exit={{ scale: 0 }}
-                                        transition={{ duration: 0.2 }}
                                         className="absolute -top-1.5 -right-2 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-white font-bold"
                                     >
                                         {itemCount}
