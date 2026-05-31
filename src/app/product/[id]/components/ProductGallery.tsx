@@ -43,12 +43,10 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const handleTouchMove = (e: React.TouchEvent) => {
         const dx = e.touches[0].clientX - startX.current;
         const dy = e.touches[0].clientY - startY.current;
-
         if (isHorizontal.current === null) {
             isHorizontal.current = Math.abs(dx) > Math.abs(dy);
         }
         if (!isHorizontal.current) return;
-
         if ((activeIndex === 0 && dx > 0) || (activeIndex === images.length - 1 && dx < 0)) {
             setDragOffset(dx * 0.2);
         } else {
@@ -68,57 +66,58 @@ export default function ProductGallery({ images, title }: { images: string[], ti
 
     if (!images || images.length === 0) return null;
 
-    const translateX = -(activeIndex * 100) + (dragOffset / (containerRef.current?.offsetWidth || 390)) * 100;
+    // px cinsinden offset: activeIndex * 100vw - dragOffset
+    const translatePx = -(activeIndex * 100) + (dragOffset / (typeof window !== "undefined" ? window.innerWidth : 390)) * 100;
 
     return (
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
-            {/* overflow-hidden dışarıda — yandaki fotoğraf görünür ama sayfaya taşmaz */}
-            <div className="overflow-hidden -mt-8 md:mt-0 w-screen -ml-[50vw] left-1/2 relative md:w-full md:ml-0 md:left-0">
+            {/* Mobil slider — tam ekran genişliğinde, taşan kısım body tarafından kesilir */}
+            <div
+                ref={containerRef}
+                className="-mt-8 md:mt-0 relative md:h-[600px] bg-white"
+                style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+            >
+                {/* Şerit: her slide tam 100vw */}
                 <div
-                    ref={containerRef}
-                    className="relative md:h-[600px] bg-white"
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
+                    className="flex items-start"
+                    style={{
+                        width: `${images.length * 100}vw`,
+                        transform: `translateX(calc(${translatePx}vw))`,
+                        transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+                        willChange: "transform",
+                    }}
                 >
-                    <div
-                        className="flex items-start h-full"
-                        style={{
-                            width: `${images.length * 100}%`,
-                            transform: `translateX(${translateX / images.length}%)`,
-                            transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
-                            willChange: "transform",
-                        }}
-                    >
-                        {images.map((img, idx) => (
+                    {images.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className="flex items-start justify-center bg-white"
+                            style={{ width: "100vw" }}
+                        >
+                            <img
+                                src={fixUrl(img)}
+                                alt={`${title} ${idx + 1}`}
+                                className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
+                                draggable={false}
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Mobil İndikatör */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
+                    <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
+                        {images.map((_, idx) => (
                             <div
                                 key={idx}
-                                className="flex items-start justify-center bg-white"
-                                style={{ width: `${100 / images.length}%` }}
-                            >
-                                <img
-                                    src={fixUrl(img)}
-                                    alt={`${title} ${idx + 1}`}
-                                    className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
-                                    draggable={false}
-                                />
-                            </div>
+                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                    activeIndex === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                                }`}
+                            />
                         ))}
-                    </div>
-
-                    {/* Mobil İndikatör */}
-                    <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
-                        <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
-                            {images.map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                                        activeIndex === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
-                                    }`}
-                                />
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>
