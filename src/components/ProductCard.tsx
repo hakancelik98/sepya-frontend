@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { Bell, Heart } from "lucide-react";
-import FavoriteButton from "@/components/FavoriteButton"; // FavoriteButton import edildi
+import FavoriteButton from "@/components/FavoriteButton";
 
 interface ProductProps {
     id: number;
@@ -18,7 +18,8 @@ interface ProductProps {
     brand?: { name: string };
     stockQuantity?: number;
     subtitle?: string;
-    isFavorite?: boolean; // ProductList'ten geçilecek
+    isFavorite?: boolean;
+    index?: number; // Kaçıncı ürün olduğu - priority için
 }
 
 export default function ProductCard({
@@ -31,10 +32,12 @@ export default function ProductCard({
                                         hoverImageUrl,
                                         stockQuantity = 0,
                                         subtitle,
-                                        isFavorite = false
+                                        isFavorite = false,
+                                        index = 0
                                     }: ProductProps) {
     const [displayImage, setDisplayImage] = useState(imageUrl);
     const [isHovered, setIsHovered] = useState(false);
+    const [hoverImageLoaded, setHoverImageLoaded] = useState(false);
     const { addToCart, openCart } = useCart();
 
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
@@ -43,12 +46,9 @@ export default function ProductCard({
         setDisplayImage(imageUrl);
     }, [imageUrl]);
 
-    // Fiyat Güvenlik Kontrolleri
     const safePrice = Number(price) || 0;
     const safeDiscountedPrice = Number(discountedPrice) || 0;
     const hasDiscount = safeDiscountedPrice > 0 && safeDiscountedPrice < safePrice;
-
-    // STOK KONTROLÜ
     const isOutOfStock = stockQuantity === 0;
 
     const formatUrl = (url: string | null | undefined) => {
@@ -84,13 +84,15 @@ export default function ProductCard({
     return (
         <div
             className="group/card relative block"
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={() => {
+                setIsHovered(true);
+                // Hover image'i lazy yükle - sadece mouse'a girilince
+            }}
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* GÖRSEL ALANI */}
             <div className="relative overflow-hidden bg-[#f7f7f7]">
 
-                {/* SeasonLabel / Etiket */}
                 {seasonLabel && !isOutOfStock && (
                     <div className="absolute top-3 left-3 z-10 bg-red-700 text-white px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
                         {seasonLabel}
@@ -110,22 +112,38 @@ export default function ProductCard({
                         fill
                         sizes="(max-width: 768px) 50vw, 25vw"
                         className="object-cover transition-opacity duration-700 group-hover/card:opacity-0"
-                        priority
-                        unoptimized
+                        // Sadece ilk 4 ürünü priority ile yükle (viewport'ta görünen)
+                        priority={index < 4}
+                        // unoptimized KALDIRILDI - Cloudflare kendi optimize etsin
+                        placeholder="blur"
+                        blurDataURL="data:image/webp;base64,UklGRiYAAABXRUJQVlA4IBIAAAAwAQCdASoIAAgAAkA4JaQCdAEO+AEPAAAA"
                     />
-                    {hoverImageUrl && (
+
+                    {/* HOVER IMAGE - Lazy Loading */}
+                    {hoverImageUrl && isHovered && !hoverImageLoaded && (
+                        <Image
+                            src={formatUrl(hoverImageUrl)}
+                            alt={`${title} hover`}
+                            fill
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                            className="object-cover opacity-100 transition-opacity duration-700 absolute inset-0"
+                            loading="lazy"
+                            onLoadingComplete={() => setHoverImageLoaded(true)}
+                        />
+                    )}
+
+                    {hoverImageUrl && hoverImageLoaded && (
                         <Image
                             src={formatUrl(hoverImageUrl)}
                             alt={`${title} hover`}
                             fill
                             sizes="(max-width: 768px) 50vw, 25vw"
                             className="object-cover opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 absolute inset-0"
-                            unoptimized
                         />
                     )}
                 </Link>
 
-                {/* HOVER BUTON - Desktop */}
+                {/* HOVER BUTTON */}
                 <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover/card:translate-y-0 transition-transform duration-300 ease-in-out z-20 hidden md:block">
                     {isOutOfStock ? (
                         <button
@@ -144,7 +162,6 @@ export default function ProductCard({
                     )}
                 </div>
 
-                {/* FAVORİ BUTONU - FavoriteButton Component Kullanıldı */}
                 <FavoriteButton
                     productId={id}
                     initialIsFavorite={isFavorite}
@@ -154,7 +171,6 @@ export default function ProductCard({
 
             {/* BİLGİ ALANI */}
             <div className="mt-4 text-center px-1">
-                {/* Ürün Alt Başlığı */}
                 {subtitle && (
                     <span className="block text-[9px] md:text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-1 font-light">
                         {subtitle}
