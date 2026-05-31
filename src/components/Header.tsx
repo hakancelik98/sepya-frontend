@@ -38,7 +38,18 @@ export default function Header() {
     }, []);
 
     useEffect(() => {
-        const handleScroll = () => setShrink(window.scrollY > 10);
+        let lastShrinkState = false;
+
+        const handleScroll = () => {
+            const shouldShrink = window.scrollY > 10;
+
+            // State SADECE değişim gerektiğinde update et
+            if (shouldShrink !== lastShrinkState) {
+                setShrink(shouldShrink);
+                lastShrinkState = shouldShrink;
+            }
+        };
+
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
