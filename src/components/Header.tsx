@@ -91,7 +91,7 @@ export default function Header() {
                     {/* Orta */}
                     <div className="flex-[2] md:flex-1 flex justify-center items-center">
                         <Link href="/" className="flex items-center justify-center">
-                            {!shrink && !isMobile && settings?.logoUrl ? (
+                            {!shrink && settings?.logoUrl ? (
                                 <div className="relative h-[80px] w-[80px]">
                                     <Image
                                         src={
