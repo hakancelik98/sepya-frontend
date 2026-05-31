@@ -51,8 +51,9 @@ export default function Header() {
                 </AnimatePresence>
 
                 <div
-                    className={`w-full flex items-center justify-between px-8 transition-all duration-300 ease-in-out
-                    ${shrink ? "h-[55px] bg-white/95 backdrop-blur-md shadow-sm" : "h-[85px] bg-white"}`}
+                    className={`w-full flex items-center justify-between px-8 transition-all ease-in-out
+                    ${shrink ? "h-[55px] bg-white/95 backdrop-blur-md shadow-sm" : "h-[85px] bg-white"}
+                    md:duration-300 duration-150`}
                 >
                     {/* Sol */}
                     <div className="flex items-center gap-6 flex-1">
