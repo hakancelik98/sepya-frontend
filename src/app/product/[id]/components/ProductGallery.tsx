@@ -25,7 +25,6 @@ export default function ProductGallery({
         return `${baseUrl}${cleanPath}`;
     };
 
-    // preload images
     useEffect(() => {
         images?.forEach((img) => {
             const i = new Image();
@@ -48,9 +47,7 @@ export default function ProductGallery({
         if (!isDragging) return;
 
         const x = e.touches[0].clientX;
-        const diff = x - startX.current;
-
-        setDragX(diff);
+        setDragX(x - startX.current);
     };
 
     const onTouchEnd = () => {
@@ -67,9 +64,10 @@ export default function ProductGallery({
         setDragX(0);
     };
 
-    if (!images || images.length === 0) return null;
+    if (!images?.length) return null;
 
-    const percentOffset = -index * 100 + (dragX / window.innerWidth) * 100;
+    const offset =
+        -index * 100 + (dragX / (typeof window !== "undefined" ? window.innerWidth : 1)) * 100;
 
     return (
         <div className="w-full max-w-4xl mx-auto select-none">
@@ -82,7 +80,7 @@ export default function ProductGallery({
                     className="flex"
                     style={{
                         width: `${images.length * 100}%`,
-                        transform: `translateX(${percentOffset}%)`,
+                        transform: `translateX(${offset}%)`,
                         transition: isDragging
                             ? "none"
                             : "transform 0.35s ease-out",
@@ -96,11 +94,12 @@ export default function ProductGallery({
                             key={i}
                             className="w-full flex-shrink-0 bg-white"
                         >
-                            <div className="relative w-full aspect-[3/4] md:h-[600px] md:aspect-auto">
+                            {/* 🔥 FIX: ekrana tam oturan alan */}
+                            <div className="w-full h-[70vh] md:h-[600px] flex items-center justify-center bg-white">
                                 <img
                                     src={fixUrl(img)}
                                     alt={`${title} ${i + 1}`}
-                                    className="absolute inset-0 w-full h-full object-contain object-top"
+                                    className="max-w-full max-h-full object-contain"
                                     draggable={false}
                                     loading="eager"
                                 />
@@ -116,7 +115,7 @@ export default function ProductGallery({
                     <button
                         key={i}
                         onClick={() => goTo(i)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 rounded-full transition-all ${
                             index === i
                                 ? "w-5 bg-black"
                                 : "w-2 bg-black/30"
@@ -125,15 +124,15 @@ export default function ProductGallery({
                 ))}
             </div>
 
-            {/* THUMBNAILS */}
+            {/* THUMBS */}
             <div className="hidden md:flex justify-center gap-3 mt-4">
                 {images.map((img, i) => (
                     <button
                         key={i}
                         onClick={() => goTo(i)}
-                        className={`w-24 h-28 overflow-hidden border-b-2 transition-all ${
+                        className={`w-24 h-28 overflow-hidden border-b-2 transition ${
                             index === i
-                                ? "border-black opacity-100 scale-105"
+                                ? "border-black opacity-100"
                                 : "border-transparent opacity-40"
                         }`}
                     >
