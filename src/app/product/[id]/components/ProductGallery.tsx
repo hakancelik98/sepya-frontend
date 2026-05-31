@@ -17,13 +17,21 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         const el = scrollRef.current;
         if (!el) return;
 
+        let rafId: number;
+
         const onScroll = () => {
-            const index = Math.round(el.scrollLeft / el.offsetWidth);
-            setActiveIndex(index);
+            cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                const index = Math.round(el.scrollLeft / el.offsetWidth);
+                setActiveIndex(prev => prev === index ? prev : index);
+            });
         };
 
         el.addEventListener("scroll", onScroll, { passive: true });
-        return () => el.removeEventListener("scroll", onScroll);
+        return () => {
+            el.removeEventListener("scroll", onScroll);
+            cancelAnimationFrame(rafId);
+        };
     }, []);
 
     const goTo = (index: number) => {
@@ -38,7 +46,6 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     return (
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
-            {/* ANA SLIDER — scroll-snap */}
             <div
                 className="-mt-8 md:mt-0 relative"
                 style={{ marginLeft: "calc(-50vw + 50%)", width: "100vw" }}
@@ -58,23 +65,19 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                         <div
                             key={idx}
                             className="flex-shrink-0 flex items-start justify-center bg-white md:h-[600px]"
-                            style={{
-                                width: "100vw",
-                                scrollSnapAlign: "start",
-                            }}
+                            style={{ width: "100vw", scrollSnapAlign: "start" }}
                         >
                             <img
                                 src={fixUrl(img)}
                                 alt={`${title} ${idx + 1}`}
                                 className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
                                 draggable={false}
+                                loading="eager"
+                                decoding="sync"
                             />
                         </div>
                     ))}
                 </div>
-
-                {/* Scrollbar'ı gizle (webkit) */}
-                <style>{`.no-scrollbar::-webkit-scrollbar{display:none}`}</style>
 
                 {/* Mobil İndikatör */}
                 <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
