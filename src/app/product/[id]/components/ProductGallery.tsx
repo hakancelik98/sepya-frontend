@@ -22,17 +22,12 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         setActiveIndex(Math.max(0, Math.min(images.length - 1, index)));
     };
 
-    // passive: false olmadan preventDefault çalışmaz
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return;
-
         const onTouchMove = (e: TouchEvent) => {
-            if (isHorizontal.current === true) {
-                e.preventDefault(); // yalnızca yatay sürükleme sırasında scroll'u engelle
-            }
+            if (isHorizontal.current === true) e.preventDefault();
         };
-
         el.addEventListener("touchmove", onTouchMove, { passive: false });
         return () => el.removeEventListener("touchmove", onTouchMove);
     }, []);
@@ -40,7 +35,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     const handleTouchStart = (e: React.TouchEvent) => {
         startX.current = e.touches[0].clientX;
         startY.current = e.touches[0].clientY;
-        isHorizontal.current = null; // yön henüz belli değil
+        isHorizontal.current = null;
         setIsDragging(true);
         setDragOffset(0);
     };
@@ -49,12 +44,10 @@ export default function ProductGallery({ images, title }: { images: string[], ti
         const dx = e.touches[0].clientX - startX.current;
         const dy = e.touches[0].clientY - startY.current;
 
-        // İlk harekette yönü belirle
         if (isHorizontal.current === null) {
             isHorizontal.current = Math.abs(dx) > Math.abs(dy);
         }
-
-        if (!isHorizontal.current) return; // dikey hareket → dokunma
+        if (!isHorizontal.current) return;
 
         if ((activeIndex === 0 && dx > 0) || (activeIndex === images.length - 1 && dx < 0)) {
             setDragOffset(dx * 0.2);
@@ -80,50 +73,52 @@ export default function ProductGallery({ images, title }: { images: string[], ti
     return (
         <div className="flex flex-col gap-0 md:gap-6 select-none w-full max-w-4xl mx-auto">
 
-            {/* ANA GÖRSEL ALANI */}
-            <div
-                ref={containerRef}
-                className="relative overflow-hidden -mt-8 md:mt-0 w-screen -ml-[50vw] left-1/2 md:w-full md:ml-0 md:left-0 md:h-[600px] bg-white"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-            >
+            {/* overflow-hidden dışarıda — yandaki fotoğraf görünür ama sayfaya taşmaz */}
+            <div className="overflow-hidden -mt-8 md:mt-0 w-screen -ml-[50vw] left-1/2 relative md:w-full md:ml-0 md:left-0">
                 <div
-                    className="flex items-start h-full"
-                    style={{
-                        width: `${images.length * 100}%`,
-                        transform: `translateX(${translateX / images.length}%)`,
-                        transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
-                        willChange: "transform",
-                    }}
+                    ref={containerRef}
+                    className="relative md:h-[600px] bg-white"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                 >
-                    {images.map((img, idx) => (
-                        <div
-                            key={idx}
-                            className="flex items-start justify-center bg-white"
-                            style={{ width: `${100 / images.length}%` }}
-                        >
-                            <img
-                                src={fixUrl(img)}
-                                alt={`${title} ${idx + 1}`}
-                                className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
-                                draggable={false}
-                            />
-                        </div>
-                    ))}
-                </div>
-
-                {/* Mobil İndikatör */}
-                <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
-                    <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
-                        {images.map((_, idx) => (
+                    <div
+                        className="flex items-start h-full"
+                        style={{
+                            width: `${images.length * 100}%`,
+                            transform: `translateX(${translateX / images.length}%)`,
+                            transition: isDragging ? "none" : "transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)",
+                            willChange: "transform",
+                        }}
+                    >
+                        {images.map((img, idx) => (
                             <div
                                 key={idx}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${
-                                    activeIndex === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
-                                }`}
-                            />
+                                className="flex items-start justify-center bg-white"
+                                style={{ width: `${100 / images.length}%` }}
+                            >
+                                <img
+                                    src={fixUrl(img)}
+                                    alt={`${title} ${idx + 1}`}
+                                    className="w-full h-auto md:h-[600px] md:object-contain md:object-top block"
+                                    draggable={false}
+                                />
+                            </div>
                         ))}
+                    </div>
+
+                    {/* Mobil İndikatör */}
+                    <div className="absolute bottom-6 left-0 right-0 flex justify-center md:hidden z-10 pointer-events-none">
+                        <div className="bg-black/20 backdrop-blur-xl px-4 py-2 rounded-full flex gap-2 border border-white/10">
+                            {images.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                        activeIndex === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"
+                                    }`}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
