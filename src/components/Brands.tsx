@@ -49,30 +49,29 @@ export default function Brands() {
 
     return (
         <section className={`w-full bg-white p-2 ${montserrat.className}`}>
-            {/* Mobil: 2 kolonlu grid
-                Desktop (md): 3 kolonlu standart grid (isteğe bağlı değiştirebilirsin)
-            */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 w-full">
+            {/* Mobil: `grid grid-cols-2` ile 2'li düzen ve senin modülo mantığın çalışmaya devam ediyor.
+            Desktop (md): `md:flex md:flex-wrap md:justify-center` ile 14 eleman olduğunda
+            son satırda kalan 2 eleman alt ortada hizalanır, boşluk kalmaz.
+        */}
+            <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap md:justify-center">
                 {brands.map((brand, i) => {
-                    // MODÜLO MANTIĞI:
-                    // i=2 (3. eleman), i=5 (6. eleman) vb. durumlarında tam genişlik yap
+                    // MOBİL MODÜLO MANTIĞI:
+                    // i=2 (3. eleman), i=5 (6. eleman) vb. durumlarda mobil için tam genişlik (col-span-2)
                     const isFullWidthMobile = (i + 1) % 3 === 0;
 
                     return (
                         <Link
                             key={brand.id}
                             href={`/shop?brand=${brand.slug}`}
-                            className={`block ${isFullWidthMobile ? "col-span-2 md:col-span-1" : "col-span-1"}`}
+                            className={`block transition-all duration-300
+                            ${isFullWidthMobile ? "col-span-2" : "col-span-1"} 
+                            md:w-[calc(33.333%-6px)] md:shrink-0 md:grow-0`}
                         >
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className={`group relative overflow-hidden bg-neutral-50 shadow-sm ${
-                                    /* isFullWidthMobile: Tam sayfa olanların yüksekliği. 
-                                       aspect-[21/9] görseli daha basık/yatay yapar.
-                                       Eğer hala büyük gelirse aspect-[3/1] yapabilirsin.
-                                    */
                                     isFullWidthMobile
                                         ? "aspect-[21/9] md:aspect-[16/10]"
                                         : "aspect-[16/10]"
@@ -87,10 +86,10 @@ export default function Brands() {
                                     <div className="absolute inset-0 bg-white/0 group-hover:bg-transparent transition-all duration-1000 ease-in-out" />
                                 </div>
 
-                                {/* İÇERİK - Tam sayfa olanlarda yazıların çok büyük durmaması için flex-row da yapılabilir */}
-                                <div className="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center transition-all duration-700 group-hover:opacity-0 group-hover:translate-y-4">
+                                {/* İÇERİK - İstediğin gibi Marka ismi, Gold çizgi ve Koleksiyonu İncele kaldırıldı. Sadece LOGO kaldı. */}
+                                <div className="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center transition-all duration-700">
                                     {brand.logoUrl && (
-                                        <div className={`relative mb-4 ${isFullWidthMobile ? "w-20 h-8 md:w-28 md:h-16" : "w-16 h-10 md:w-28 md:h-16"}`}>
+                                        <div className="relative w-20 h-10 md:w-32 md:h-16">
                                             <Image
                                                 src={fixUrl(brand.logoUrl)}
                                                 alt={brand.name}
@@ -100,17 +99,6 @@ export default function Brands() {
                                             />
                                         </div>
                                     )}
-
-                                    <h2 className="text-[11px] md:text-[15px] font-bold uppercase tracking-[0.5em] text-black leading-none">
-                                        {brand.name}
-                                    </h2>
-
-                                    {/* Tam sayfa olanda çizgi arasını biraz daralttık */}
-                                    <div className={`${isFullWidthMobile ? "mt-3" : "mt-5"} h-[1.5px] w-14 bg-[#C5A059]`} />
-
-                                    <span className="mt-3 text-[8px] font-light uppercase tracking-[0.3em] text-black/50">
-                Koleksiyonu İncele
-            </span>
                                 </div>
 
                                 <div className="absolute inset-0 border border-black/[0.03] pointer-events-none" />
