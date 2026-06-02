@@ -49,14 +49,10 @@ export default function Brands() {
 
     return (
         <section className={`w-full bg-white p-2 ${montserrat.className}`}>
-            {/* Mobil: `grid grid-cols-2` ile 2'li düzen ve senin modülo mantığın çalışmaya devam ediyor.
-            Desktop (md): `md:flex md:flex-wrap md:justify-center` ile 14 eleman olduğunda
-            son satırda kalan 2 eleman alt ortada hizalanır, boşluk kalmaz.
-        */}
-            <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap md:justify-center">
+            {/* Masaüstünde (md) flex yapısı kullanarak kartların boşluğu doldurmasını (grow) sağladık */}
+            <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap">
                 {brands.map((brand, i) => {
                     // MOBİL MODÜLO MANTIĞI:
-                    // i=2 (3. eleman), i=5 (6. eleman) vb. durumlarda mobil için tam genişlik (col-span-2)
                     const isFullWidthMobile = (i + 1) % 3 === 0;
 
                     return (
@@ -65,15 +61,15 @@ export default function Brands() {
                             href={`/shop?brand=${brand.slug}`}
                             className={`block transition-all duration-300
                             ${isFullWidthMobile ? "col-span-2" : "col-span-1"} 
-                            md:w-[calc(33.333%-6px)] md:shrink-0 md:grow-0`}
+                            md:w-[calc(33.333%-6px)] md:flex-grow md:shrink-0`}
                         >
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
-                                className={`group relative overflow-hidden bg-neutral-50 shadow-sm ${
+                                className={`group relative overflow-hidden bg-neutral-50 shadow-sm w-full ${
                                     isFullWidthMobile
-                                        ? "aspect-[21/9] md:aspect-[16/10]"
+                                        ? "aspect-[21/9] md:aspect-[16/10]" // İstersen son satır çok yayvan gelirse md:aspect-[21/9] veya [3/1] yapabilirsin
                                         : "aspect-[16/10]"
                                 }`}
                             >
@@ -86,7 +82,7 @@ export default function Brands() {
                                     <div className="absolute inset-0 bg-white/0 group-hover:bg-transparent transition-all duration-1000 ease-in-out" />
                                 </div>
 
-                                {/* İÇERİK - İstediğin gibi Marka ismi, Gold çizgi ve Koleksiyonu İncele kaldırıldı. Sadece LOGO kaldı. */}
+                                {/* İÇERİK - Sadece Logo */}
                                 <div className="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center transition-all duration-700">
                                     {brand.logoUrl && (
                                         <div className="relative w-20 h-10 md:w-32 md:h-16">
