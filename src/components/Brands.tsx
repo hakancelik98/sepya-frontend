@@ -49,10 +49,14 @@ export default function Brands() {
 
     return (
         <section className={`w-full bg-white p-2 ${montserrat.className}`}>
-            {/* Masaüstünde (md) flex yapısı kullanarak kartların boşluğu doldurmasını (grow) sağladık */}
+            {/* Mobil: `grid grid-cols-2` düzenini koruyoruz.
+            Masaüstü (md): Grid yerine Flexbox'a geçiyoruz (`md:flex md:flex-wrap`).
+            Bu, son satırdaki elemanların kalan boşluğu doldurmasını sağlayacak.
+        */}
             <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap">
                 {brands.map((brand, i) => {
                     // MOBİL MODÜLO MANTIĞI:
+                    // i=2 (3. eleman), i=5 (6. eleman) vb. durumlarda mobil için tam genişlik (col-span-2)
                     const isFullWidthMobile = (i + 1) % 3 === 0;
 
                     return (
@@ -61,16 +65,25 @@ export default function Brands() {
                             href={`/shop?brand=${brand.slug}`}
                             className={`block transition-all duration-300
                             ${isFullWidthMobile ? "col-span-2" : "col-span-1"} 
-                            md:w-[calc(33.333%-6px)] md:flex-grow md:shrink-0`}
+                            /* Masaüstü Flex Ayarları:
+                               w-[calc(33.333%-6px)]: 3 kolonlu düzen için varsayılan genişlik.
+                               md:grow: Son satırdaki 2 elemanın genişlemesini sağlar.
+                               h-[250px]: Tüm masaüstü kartlarının yüksekliğini SABİTLER (bu değeri değiştirebilirsin).
+                               Bu sayede boy-en oranı değişse bile yükseklik aynı kalır.
+                            */
+                            md:w-[calc(33.333%-6px)] md:shrink-0 md:grow md:h-[250px]`}
                         >
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
-                                className={`group relative overflow-hidden bg-neutral-50 shadow-sm w-full ${
+                                className={`group relative overflow-hidden bg-neutral-50 shadow-sm w-full h-full ${
+                                    /* Mobilde aspect-ratio'yu koruyoruz, çünkü mobil grid düzeninde 
+                                       yükseklik otomatik hesaplanmalı.
+                                    */
                                     isFullWidthMobile
-                                        ? "aspect-[21/9] md:aspect-[16/10]" // İstersen son satır çok yayvan gelirse md:aspect-[21/9] veya [3/1] yapabilirsin
-                                        : "aspect-[16/10]"
+                                        ? "aspect-[21/9] md:aspect-auto"
+                                        : "aspect-[16/10] md:aspect-auto"
                                 }`}
                             >
                                 {/* ARKA PLAN GÖRSELİ */}
