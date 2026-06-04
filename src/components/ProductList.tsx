@@ -176,6 +176,7 @@ export default function ProductList({ filteredProducts, handleEdit, handleDelete
                             );
                         })
                     ) : (
+
                         <tr>
                             <td colSpan={13} className="px-4 py-8 text-center text-slate-400">
                                 <span className="text-[12px] font-bold">Ürün bulunamadı</span>
