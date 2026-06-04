@@ -116,7 +116,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                     />
 
                     <div className="relative flex h-full pointer-events-none items-start max-w-full">
-                        {/* ANA PANEL KAYMA MANTIĞI */}
+                        {/* ANA PANEL */}
                         <motion.div
                             initial={{x: "-100%"}}
                             animate={{x: 0}}
@@ -131,7 +131,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                             <div className="flex flex-col p-8 md:p-10 w-full min-h-full overflow-x-hidden">
 
                                 {/* 1. ARAMA */}
-                                <div className="relative mb-12 shrink-0" ref={searchRef}>
+                                <div className="relative mb-6 shrink-0" ref={searchRef}>
                                     <div className="relative flex items-center h-10 border-b border-zinc-100 focus-within:border-black transition-all">
                                         <Search className="absolute left-0 text-zinc-400" size={14}/>
                                         <input
@@ -140,17 +140,12 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             onKeyDown={handleSearchSubmit}
-                                            /*
-                                              Aşağıdaki sınıflarda font boyutu tarayıcı zoom yapmasın diye text-base (16px) yapıldı.
-                                              Visual (görsel) olarak eski 10px boyutuna sadık kalmak için origin-left ile sola yaslanıp
-                                              scale-[0.625] (%62.5) oranında küçültüldü. Genişlik ise küçülmeden kaynaklı kısalmasın diye %160 yapıldı.
-                                            */
                                             className="w-[160%] pl-11 bg-transparent border-none outline-none text-base tracking-[0.3em] uppercase text-zinc-900 transform origin-left scale-[0.625]"
                                         />
                                         {isSearching && <Loader2 className="absolute right-0 animate-spin text-zinc-400" size={12}/>}
                                     </div>
 
-                                    {/* Arama Sonuçları Paneli (Burası aynı kalıyor) */}
+                                    {/* Arama Sonuçları */}
                                     <AnimatePresence>
                                         {searchResults.length > 0 && (
                                             <motion.div
@@ -183,7 +178,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                 </div>
 
                                 {/* 2. LOGO */}
-                                <div className="flex justify-center mb-12 shrink-0">
+                                <div className="flex justify-center mb-6 shrink-0">
                                     <Link href="/" onClick={handleClose}>
                                         <Image
                                             src={settings?.logoUrl
@@ -201,8 +196,8 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                     </Link>
                                 </div>
 
-                                {/* 3. NAVİGASYON (MARKALAR DAHİL) */}
-                                <nav className="flex-1 flex flex-col min-h-0 overflow-x-hidden">
+                                {/* 3. NAVİGASYON - HEPSİ GÖRÜLECEK */}
+                                <nav className="flex flex-col">
                                     <button
                                         onClick={handleBrandsToggle}
                                         className="group flex items-center justify-between w-full py-4 border-b border-zinc-50 transition-all duration-300"
@@ -213,7 +208,8 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                         <ChevronRight size={14} className={`text-zinc-300 transition-transform ${subcategoryOpen && subcategoryType === "brands" ? 'rotate-90 text-black' : ''}`} />
                                     </button>
 
-                                    <div className="flex flex-col overflow-x-hidden">
+                                    {/* Kategoriler - Hepsi Görülecek */}
+                                    <div className="flex flex-col">
                                         {categories.map((cat) => {
                                             const isSelected = selectedCategory?.id === cat.id && subcategoryOpen && subcategoryType === "category";
                                             return (
@@ -231,7 +227,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                         })}
                                     </div>
 
-                                    {/* OMUZ ŞALI - Direkt Yönlendirme */}
+                                    {/* OMUZ ŞALI */}
                                     <button
                                         onClick={handleOmuzSaliClick}
                                         className="group flex items-center justify-between w-full py-4 border-b border-zinc-50 transition-all duration-300"
@@ -240,7 +236,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                         <ChevronRight size={14} className="text-zinc-300 group-hover:text-black transition-all" />
                                     </button>
 
-                                    {/* KAMPANYALI ÜRÜNLER - Direkt Yönlendirme */}
+                                    {/* KAMPANYALI ÜRÜNLER */}
                                     <button
                                         onClick={handleCampaignClick}
                                         className="group flex items-center justify-between w-full py-4 border-b border-zinc-50 transition-all duration-300"
