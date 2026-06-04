@@ -17,7 +17,7 @@ export default function ProductList({ filteredProducts, handleEdit, handleDelete
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        Envanter: <span className="text-slate-900">{filteredProducts.length} Ürün</span>
+                        Envanter: <span className="text-slate-900">{filteredProducts?.length || 0} Ürün</span>
                     </div>
                 </div>
             </div>
@@ -44,129 +44,137 @@ export default function ProductList({ filteredProducts, handleEdit, handleDelete
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                     {filteredProducts && filteredProducts.length > 0 ? (
-                        filteredProducts.map((p: any) => (
-                            <tr key={p.id} className="hover:bg-slate-200 transition-colors group">
-                                {/* Görsel */}
-                                <td className="px-4 py-2">
-                                    <div className="w-10 h-12 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden mx-auto shadow-sm group-hover:border-blue-300 transition-all">
-                                        {p.imageUrl ? (
-                                            <img
-                                                src={
-                                                    p.imageUrl.startsWith("http")
-                                                        ? p.imageUrl
-                                                        : `${process.env.NEXT_PUBLIC_ASSET_URL}${p.imageUrl}`
+                        filteredProducts.map((p: any) => {
+                            // isFeatured undefined ise default false olsun
+                            const isFeatured = p.isFeatured === true;
+
+                            return (
+                                <tr key={p.id} className="hover:bg-slate-200 transition-colors group">
+                                    {/* Görsel */}
+                                    <td className="px-4 py-2">
+                                        <div className="w-10 h-12 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden mx-auto shadow-sm group-hover:border-blue-300 transition-all">
+                                            {p.imageUrl ? (
+                                                <img
+                                                    src={
+                                                        p.imageUrl.startsWith("http")
+                                                            ? p.imageUrl
+                                                            : `${process.env.NEXT_PUBLIC_ASSET_URL}${p.imageUrl}`
+                                                    }
+                                                    alt={p.title}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                    <ImageIcon size={14} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+
+                                    {/* Ürün & SKU */}
+                                    <td className="px-4 py-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-[12px] font-bold text-slate-700 leading-tight group-hover:text-blue-600 truncate max-w-[220px]">
+                                                {p.title}
+                                            </span>
+                                            <span className="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-tighter">{p.sku || 'N/A'}</span>
+                                        </div>
+                                    </td>
+
+                                    {/* Stok */}
+                                    <td className="px-4 py-2">
+                                        <div className={`text-[11px] font-black ${p.stockQuantity <= 1 ? 'text-red-500 font-bold' : 'text-slate-700'}`}>
+                                            {p.stockQuantity}
+                                        </div>
+                                    </td>
+
+                                    {/* Marka */}
+                                    <td className="px-4 py-2">
+                                        <span className="px-2 py-1 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">
+                                            {typeof p.brand === 'object' ? p.brand?.name : (p.brand || "Genel")}
+                                        </span>
+                                    </td>
+
+                                    {/* Kategori */}
+                                    <td className="px-4 py-2">
+                                        <span className="px-2 py-1 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">
+                                            {p.category?.name || "Genel"}
+                                        </span>
+                                    </td>
+
+                                    {/* Fiyatlar */}
+                                    <td className="px-4 py-2 font-mono text-[11px] font-bold text-slate-500">
+                                        {p.price?.toLocaleString('tr-TR')}₺
+                                    </td>
+                                    <td className="px-4 py-2 font-mono text-[11px] font-black text-emerald-600">
+                                        {p.discountedPrice > 0 ? `${p.discountedPrice?.toLocaleString('tr-TR')}₺` : '—'}
+                                    </td>
+
+                                    {/* Renk */}
+                                    <td className="px-4 py-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full border border-slate-200 bg-slate-400 shadow-sm" style={{ backgroundColor: p.colorCode }} />
+                                            <span className="text-[10px] font-medium text-slate-600 capitalize">{p.color || '—'}</span>
+                                        </div>
+                                    </td>
+
+                                    {/* Boyut */}
+                                    <td className="px-4 py-2">
+                                        <span className="text-[10px] font-bold text-slate-500">{p.size || 'STD'}</span>
+                                    </td>
+
+                                    {/* Materyal */}
+                                    <td className="px-4 py-2">
+                                        <span className="text-[10px] text-slate-500 italic truncate block max-w-[100px]" title={p.material}>
+                                            {p.material || '—'}
+                                        </span>
+                                    </td>
+
+                                    {/* Sezon Etiketi */}
+                                    <td className="px-4 py-2">
+                                        {p.seasonLabel && (
+                                            <span className="px-2 py-0.5 bg-blue-50 text-blue-900 border border-blue-100 rounded text-[9px] font-black uppercase tracking-tighter">
+                                                {p.seasonLabel}
+                                            </span>
+                                        )}
+                                    </td>
+
+                                    {/* Kampanyalı Checkbox - HER ZAMAN GÖSTERİL */}
+                                    <td className="px-4 py-2">
+                                        <button
+                                            onClick={() => {
+                                                console.log(`[Campaign Toggle] Product ID: ${p.id}, Current: ${isFeatured}, New: ${!isFeatured}`);
+                                                if (handleToggleCampaign) {
+                                                    handleToggleCampaign(p.id, !isFeatured);
+                                                } else {
+                                                    console.warn("handleToggleCampaign function not provided!");
                                                 }
-                                                alt={p.title}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                                <ImageIcon size={14} />
-                                            </div>
-                                        )}
-                                    </div>
-                                </td>
+                                            }}
+                                            disabled={!handleToggleCampaign}
+                                            className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center cursor-pointer ${
+                                                isFeatured
+                                                    ? "bg-amber-500 border-amber-600 shadow-lg shadow-amber-500/30 hover:bg-amber-600"
+                                                    : "bg-white border-slate-200 hover:border-slate-400 hover:bg-slate-50"
+                                            } ${!handleToggleCampaign ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title={isFeatured ? "Kampanyadan çıkar" : "Kampanyaya ekle"}
+                                        >
+                                            {isFeatured && (
+                                                <Star size={14} className="text-white fill-white" />
+                                            )}
+                                        </button>
+                                    </td>
 
-                                {/* Ürün & SKU */}
-                                <td className="px-4 py-2">
-                                    <div className="flex flex-col">
-                                        <span className="text-[12px] font-bold text-slate-700 leading-tight group-hover:text-blue-600 truncate max-w-[220px]">
-                                            {p.title}
-                                        </span>
-                                        <span className="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-tighter">{p.sku || 'N/A'}</span>
-                                    </div>
-                                </td>
-
-                                {/* Stok */}
-                                <td className="px-4 py-2">
-                                    <div className={`text-[11px] font-black ${p.stockQuantity <= 1 ? 'text-red-500 font-bold' : 'text-slate-700'}`}>
-                                        {p.stockQuantity}
-                                    </div>
-                                </td>
-
-                                {/* Marka */}
-                                <td className="px-4 py-2">
-                                    <span className="px-2 py-1 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">
-                                        {typeof p.brand === 'object' ? p.brand?.name : (p.brand || "Genel")}
-                                    </span>
-                                </td>
-
-                                {/* Kategori */}
-                                <td className="px-4 py-2">
-                                    <span className="px-2 py-1 text-slate-600 rounded text-[10px] font-bold uppercase tracking-tighter">
-                                        {p.category?.name || "Genel"}
-                                    </span>
-                                </td>
-
-                                {/* Fiyatlar */}
-                                <td className="px-4 py-2 font-mono text-[11px] font-bold text-slate-500">
-                                    {p.price?.toLocaleString('tr-TR')}₺
-                                </td>
-                                <td className="px-4 py-2 font-mono text-[11px] font-black text-emerald-600">
-                                    {p.discountedPrice > 0 ? `${p.discountedPrice?.toLocaleString('tr-TR')}₺` : '—'}
-                                </td>
-
-                                {/* Renk */}
-                                <td className="px-4 py-2">
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full border border-slate-200 bg-slate-400 shadow-sm" style={{ backgroundColor: p.colorCode }} />
-                                        <span className="text-[10px] font-medium text-slate-600 capitalize">{p.color || '—'}</span>
-                                    </div>
-                                </td>
-
-                                {/* Boyut */}
-                                <td className="px-4 py-2">
-                                    <span className="text-[10px] font-bold text-slate-500">{p.size || 'STD'}</span>
-                                </td>
-
-                                {/* Materyal */}
-                                <td className="px-4 py-2">
-                                    <span className="text-[10px] text-slate-500 italic truncate block max-w-[100px]" title={p.material}>
-                                        {p.material || '—'}
-                                    </span>
-                                </td>
-
-                                {/* Sezon Etiketi */}
-                                <td className="px-4 py-2">
-                                    {p.seasonLabel && (
-                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-900 border border-blue-100 rounded text-[9px] font-black uppercase tracking-tighter">
-                                            {p.seasonLabel}
-                                        </span>
-                                    )}
-                                </td>
-
-                                {/* Kampanyalı Checkbox */}
-                                <td className="px-4 py-2">
-                                    <button
-                                        onClick={() => {
-                                            console.log(`Toggling campaign for product ${p.id}: ${!p.isFeatured}`);
-                                            if (handleToggleCampaign) {
-                                                handleToggleCampaign(p.id, !p.isFeatured);
-                                            }
-                                        }}
-                                        className={`relative w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${
-                                            p.isFeatured
-                                                ? "bg-amber-500 border-amber-600 shadow-lg shadow-amber-500/30"
-                                                : "bg-white border-slate-200 hover:border-slate-300"
-                                        }`}
-                                        title={p.isFeatured ? "Kampanyadan çıkar" : "Kampanyaya ekle"}
-                                    >
-                                        {p.isFeatured && (
-                                            <Star size={14} className="text-white fill-white" />
-                                        )}
-                                    </button>
-                                </td>
-
-                                {/* İşlemler */}
-                                <td className="px-4 py-2 text-right">
-                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => handleEdit(p)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Düzenle"><Edit2 size={13}/></button>
-                                        <button onClick={() => handleDuplicate(p)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Kopyala"><Copy size={13}/></button>
-                                        <button onClick={() => handleDelete(p.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Sil"><Trash2 size={13}/></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))
+                                    {/* İşlemler */}
+                                    <td className="px-4 py-2 text-right">
+                                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => handleEdit(p)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Düzenle"><Edit2 size={13}/></button>
+                                            <button onClick={() => handleDuplicate(p)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Kopyala"><Copy size={13}/></button>
+                                            <button onClick={() => handleDelete(p.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Sil"><Trash2 size={13}/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })
                     ) : (
                         <tr>
                             <td colSpan={13} className="px-4 py-8 text-center text-slate-400">
