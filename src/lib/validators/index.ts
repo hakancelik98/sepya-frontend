@@ -134,11 +134,11 @@ export function validateAddress(address: {
         errors.push({ field: 'district', message: 'İlçe seçilmelidir' });
     }
 
-    if (!address.postalCode?.trim()) {
-        errors.push({ field: 'postalCode', message: 'Posta kodu zorunludur' });
-    } else if (!isValidPostalCode(address.postalCode)) {
-        errors.push({ field: 'postalCode', message: 'Geçersiz posta kodu (5 haneli olmalı)' });
-    }
+    // if (!address.postalCode?.trim()) {
+    //     errors.push({ field: 'postalCode', message: 'Posta kodu zorunludur' });
+    // } else if (!isValidPostalCode(address.postalCode)) {
+    //     errors.push({ field: 'postalCode', message: 'Geçersiz posta kodu (5 haneli olmalı)' });
+    // }
 
     if (!address.phone?.trim()) {
         errors.push({ field: 'phone', message: 'Telefon numarası zorunludur' });
