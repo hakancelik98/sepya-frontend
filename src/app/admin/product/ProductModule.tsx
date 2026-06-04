@@ -63,6 +63,7 @@ export default function ProductModule() {
                         handleEdit={openEditDrawer}
                         handleDelete={product.handleDelete}
                         handleDuplicate={product.handleDuplicate}
+                        handleToggleCampaign={product.handleToggleCampaign}
                         setSearchTerm={product.setSearchTerm}
                     />
                 </div>

@@ -148,6 +148,40 @@ export function useProducts() {
         }
     };
 
+    const handleToggleCampaign = async (productId: number, isFeatured: boolean) => {
+        setError(null);
+        try {
+            console.log(`[Campaign Toggle] Ürün: ${productId}, Kampanyalı: ${isFeatured}`);
+
+            // Optimistic update - hemen UI'da güncelle
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId ? { ...p, isFeatured } : p
+                )
+            );
+
+            // Backend'e gönder
+            await axios.patch(`${API_BASE_URL}/products/${productId}`, {
+                isFeatured
+            });
+
+            console.log("✓ Kampanya durumu güncellendi");
+        } catch (err: any) {
+            console.error("Campaign toggle error:", err);
+            const errorMsg = err.response?.data?.message || "Kampanya durumu güncellenirken hata oluştu";
+            setError(errorMsg);
+
+            // Hata durumunda UI'ı geri al
+            setAllProducts(prevProducts =>
+                prevProducts.map(p =>
+                    p.id === productId ? { ...p, isFeatured: !isFeatured } : p
+                )
+            );
+
+            alert(`Hata: ${errorMsg}`);
+        }
+    };
+
     return {
         loading,
         error,
@@ -159,6 +193,7 @@ export function useProducts() {
         setSearchTerm,
         handleSubmit,
         handleDelete,
-        handleDuplicate
+        handleDuplicate,
+        handleToggleCampaign
     };
 }
