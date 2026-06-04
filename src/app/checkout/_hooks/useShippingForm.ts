@@ -50,7 +50,7 @@ export function useShippingForm(
         if (!formData.addressLine1.trim()) newErrors.addressLine1 = "Adres zorunludur";
         if (!formData.city.trim()) newErrors.city = "Şehir zorunludur";
         if (!formData.district.trim()) newErrors.district = "İlçe zorunludur";
-        if (!formData.postalCode.trim()) newErrors.postalCode = "Posta kodu zorunludur";
+        //if (!formData.postalCode.trim()) newErrors.postalCode = "Posta kodu zorunludur";
         if (!formData.phone.trim()) newErrors.phone = "Telefon zorunludur";
         if (!formData.email.trim()) newErrors.email = "E-posta zorunludur";
 
