@@ -94,6 +94,16 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
         setSubcategoryOpen(true);
     };
 
+    const handleOmuzSaliClick = () => {
+        handleClose();
+        router.push("/shop?category=omuz-sali");
+    };
+
+    const handleCampaignClick = () => {
+        handleClose();
+        router.push("/shop?campaign=featured");
+    };
+
     return (
         <AnimatePresence mode="wait">
             {isOpen && (
@@ -220,6 +230,24 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                             );
                                         })}
                                     </div>
+
+                                    {/* OMUZ ŞALI - Direkt Yönlendirme */}
+                                    <button
+                                        onClick={handleOmuzSaliClick}
+                                        className="group flex items-center justify-between w-full py-4 border-b border-zinc-50 transition-all duration-300"
+                                    >
+                                        <span className="uppercase tracking-[0.25em] text-[11px] transition-all text-zinc-500 group-hover:text-black group-hover:pl-2">Omuz Şalı</span>
+                                        <ChevronRight size={14} className="text-zinc-300 group-hover:text-black transition-all" />
+                                    </button>
+
+                                    {/* KAMPANYALI ÜRÜNLER - Direkt Yönlendirme */}
+                                    <button
+                                        onClick={handleCampaignClick}
+                                        className="group flex items-center justify-between w-full py-4 border-b border-zinc-50 transition-all duration-300"
+                                    >
+                                        <span className="uppercase tracking-[0.25em] text-[11px] transition-all text-zinc-500 group-hover:text-black group-hover:pl-2">Kampanyalı Ürünler</span>
+                                        <ChevronRight size={14} className="text-zinc-300 group-hover:text-black transition-all" />
+                                    </button>
                                 </nav>
 
                                 {/* 4. ALT MENÜ */}
