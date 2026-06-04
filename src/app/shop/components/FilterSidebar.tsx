@@ -17,7 +17,8 @@ export default function FilterSidebar({
                                           sortBy,
                                           setSortBy,
                                           activeCategory,
-                                          searchQuery
+                                          searchQuery,
+                                          campaign
                                       }: any) {
     const router = useRouter();
     const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
@@ -85,6 +86,16 @@ export default function FilterSidebar({
                     className="overflow-hidden bg-white border-b border-slate-200"
                 >
                     <div className="max-w-[1400px] mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-4 gap-12">
+
+                        {/* Kampanya Badge */}
+                        {campaign === "featured" && (
+                            <div className="md:col-span-4 bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-4 flex items-center gap-3">
+                                <span className="text-2xl">🎉</span>
+                                <p className="text-[10px] text-amber-900 uppercase tracking-widest font-black">
+                                    Kampanyalı Ürünleri Gösteriliyor
+                                </p>
+                            </div>
+                        )}
 
                         {/* Arama Sorgusu Göster */}
                         {searchQuery && (

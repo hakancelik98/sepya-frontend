@@ -17,6 +17,7 @@ export default function ShopModule() {
     const priceQuery = Number(searchParams.get("price")) || 20000;
     const sortQuery = searchParams.get("sort") || "Varsayılan";
     const searchQuery = searchParams.get("search") || "";
+    const campaignQuery = searchParams.get("campaign") || null; // Kampanya parametresi
 
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -36,8 +37,19 @@ export default function ShopModule() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                let productsUrl = `${API_BASE}/products`;
+
+                // Kampanyalı ürünler
+                if (campaignQuery === "featured") {
+                    productsUrl = `${API_BASE}/products/featured`;
+                }
+                // Kategori bazında
+                else if (categoryQuery) {
+                    productsUrl = `${API_BASE}/products/category/${categoryQuery}`;
+                }
+
                 const [prodRes, catRes] = await Promise.all([
-                    fetch(`${API_BASE}/products`),
+                    fetch(productsUrl),
                     fetch(`${API_BASE}/categories/main`)
                 ]);
                 setProducts(await prodRes.json());
@@ -47,7 +59,7 @@ export default function ShopModule() {
             }
         };
         fetchData();
-    }, []);
+    }, [campaignQuery, categoryQuery]); // campaignQuery ve categoryQuery'ye göre refetch
 
     // Ürünlerin içindeki benzersiz markaları ayıkla (slug formatında)
     const brands = useMemo(() => {
@@ -147,9 +159,11 @@ export default function ShopModule() {
             <div className="bg-white border-b border-slate-100 px-6 py-4 pt-10">
                 <div className="max-w-[1400px] mx-auto flex justify-between items-center">
                     <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-900">
-                        {searchQuery
-                            ? `ARAMA: "${searchQuery}"`
-                            : (categoryQuery ? categoryQuery.replace("-", " ") : "KOLEKSİYON")}
+                        {campaignQuery === "featured"
+                            ? "🎉 KAMPANYALI ÜRÜNLER"
+                            : searchQuery
+                                ? `ARAMA: "${searchQuery}"`
+                                : (categoryQuery ? categoryQuery.replace("-", " ").toUpperCase() : "KOLEKSİYON")}
                     </h1>
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -176,6 +190,7 @@ export default function ShopModule() {
                 setSortBy={(val: string) => updateURL("sort", val)}
                 activeCategory={categoryQuery}
                 searchQuery={searchQuery}
+                campaign={campaignQuery}
             />
 
             <main className="max-w-[1400px] mx-auto px-6 py-12">
