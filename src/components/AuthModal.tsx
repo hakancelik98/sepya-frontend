@@ -93,8 +93,11 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                     errorMessage = view === "login"
                         ? "E-posta veya şifre hatalı"
                         : "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.";
-                } else if (response.status === 401 || response.status === 400) {
+                } else if (response.status === 401) {
                     errorMessage = "E-posta veya şifre hatalı";
+                } else if (response.status === 400) {
+                    // Validation hatası — backend'den gelen mesajı direkt göster
+                    errorMessage = data.message || "Lütfen bilgilerinizi kontrol edin.";
                 } else if (response.status === 409) {
                     errorMessage = data.message || "Bu e-posta adresi zaten kayıtlı";
                 } else {

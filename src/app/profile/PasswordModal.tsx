@@ -13,17 +13,14 @@ export function PasswordModal({ isOpen, onClose }: any) {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
     const handleSubmit = async () => {
-        // Frontend validasyonları
         if (!form.current || !form.new || !form.confirm) {
             setError("Tüm alanları doldurunuz");
             return;
         }
-
         if (form.new !== form.confirm) {
             setError("Yeni şifreler eşleşmiyor");
             return;
         }
-
         if (form.new.length < 8) {
             setError("Yeni şifre en az 8 karakter olmalıdır");
             return;
@@ -34,10 +31,8 @@ export function PasswordModal({ isOpen, onClose }: any) {
 
         try {
             const token = localStorage.getItem("token");
-
             if (!token) {
                 setError("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
-                setLoading(false);
                 return;
             }
 
@@ -57,28 +52,30 @@ export function PasswordModal({ isOpen, onClose }: any) {
             if (response.ok) {
                 setSuccess(true);
                 setForm({ current: "", new: "", confirm: "" });
-
-                // 2 saniye sonra modal'ı kapat
                 setTimeout(() => {
                     setSuccess(false);
                     onClose();
                 }, 2000);
             } else {
-                const errorData = await response.text();
-
-                // Backend'den gelen hata mesajlarını işle
-                if (response.status === 400) {
-                    if (errorData.includes("Mevcut şifre hatalı")) {
-                        setError("Mevcut şifreniz yanlış");
-                    } else if (errorData.includes("eşleşmiyor")) {
-                        setError("Şifreler eşleşmiyor");
+                // JSON veya text olarak gelen hatayı güvenli oku
+                let message = "Şifre değiştirme başarısız";
+                try {
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await response.json();
+                        message = data.message || message;
                     } else {
-                        setError(errorData || "Şifre değiştirme başarısız");
+                        const text = await response.text();
+                        if (text) message = text;
                     }
-                } else if (response.status === 401) {
+                } catch {
+                    // parse hatası → genel mesaj
+                }
+
+                if (response.status === 401) {
                     setError("Oturumunuz sonlanmış. Lütfen tekrar giriş yapın.");
                 } else {
-                    setError("Bir hata oluştu. Lütfen tekrar deneyin.");
+                    setError(message);
                 }
             }
         } catch (err) {
@@ -131,7 +128,6 @@ export function PasswordModal({ isOpen, onClose }: any) {
                             <p className="text-xs text-zinc-500 mt-1">Güvenliğiniz için yeni bir şifre belirleyin.</p>
                         </div>
 
-                        {/* Başarı Mesajı */}
                         {success && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
@@ -143,7 +139,6 @@ export function PasswordModal({ isOpen, onClose }: any) {
                             </motion.div>
                         )}
 
-                        {/* Hata Mesajı */}
                         {error && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
@@ -169,31 +164,30 @@ export function PasswordModal({ isOpen, onClose }: any) {
                                         <input
                                             type={show[field.id as keyof typeof show] ? "text" : "password"}
                                             value={field.val}
-                                            onChange={(e) => setForm({...form, [field.id]: e.target.value})}
+                                            onChange={(e) => setForm({ ...form, [field.id]: e.target.value })}
                                             className="w-full bg-zinc-50 border border-zinc-100 rounded-lg px-3 py-2.5 text-sm font-semibold focus:bg-white focus:border-black outline-none transition-all"
                                             placeholder="••••••••"
                                             disabled={loading || success}
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => setShow({...show, [field.id]: !show[field.id as keyof typeof show]})}
+                                            onClick={() => setShow({ ...show, [field.id]: !show[field.id as keyof typeof show] })}
                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black"
                                             disabled={loading || success}
                                         >
-                                            {show[field.id as keyof typeof show] ? <EyeOff size={15}/> : <Eye size={15}/>}
+                                            {show[field.id as keyof typeof show] ? <EyeOff size={15} /> : <Eye size={15} />}
                                         </button>
                                     </div>
                                 </div>
                             ))}
 
-                            {/* Şifre Gereksinimleri - Kompakt */}
                             <div className="bg-zinc-50 rounded-lg p-3">
                                 <p className="text-[9px] font-bold uppercase text-zinc-400 tracking-[0.1em] mb-1.5">
                                     Şifre Gereksinimleri
                                 </p>
                                 <ul className="text-[10px] text-zinc-600 space-y-0.5">
                                     <li>• En az 8 karakter</li>
-                                    <li>• Büyük/küçük harf, rakam ve özel karakter</li>
+                                    <li>• Büyük/küçük harf, rakam ve özel karakter (!@#$%^ vb.)</li>
                                 </ul>
                             </div>
 
