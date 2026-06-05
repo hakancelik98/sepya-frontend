@@ -17,7 +17,7 @@ export default function ProductInfo({ product }: { product: any }) {
     };
 
     return (
-        <div className="space-y-6 w-full text-zinc-900 bg-white p-2 md:p-4 lg:max-w-[550px]">
+        <div className="space-y-4 md:space-y-6 w-full text-zinc-900 bg-white p-2 md:p-4 lg:max-w-[550px]">
 
             {/* 1. ÜST SEGMENT: Marka, REF ve Başlık */}
             <div className="space-y-3">
@@ -49,8 +49,8 @@ export default function ProductInfo({ product }: { product: any }) {
                 </div>
             </div>
 
-            {/* 2. TEKNİK ÖZELLİKLER: Modern Chip Tasarımı */}
-            <div className="flex flex-wrap gap-2 py-4 border-y border-zinc-50">
+            {/* 2. TEKNİK ÖZELLİKLER: Modern Chip Tasarımı - MOBİLDE DARALTILMIŞ */}
+            <div className="flex flex-wrap gap-2 py-2 md:py-4 border-y border-zinc-50">
                 <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-lg transition-hover hover:bg-zinc-100">
                     <Info size={14} className="text-zinc-400" />
                     <div className="flex flex-col">
@@ -76,7 +76,7 @@ export default function ProductInfo({ product }: { product: any }) {
 
             {/* 4. VARYANTLAR */}
             {otherVariants.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-900">Renkler</span>
                         <div className="h-[1px] flex-1 bg-zinc-50" />
