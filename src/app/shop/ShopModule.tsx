@@ -1,104 +1,173 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import FilterSidebar from "./components/FilterSidebar";
 import ProductGrid from "./components/ProductGrid";
 import { SlidersHorizontal, X } from "lucide-react";
+
+// Spring Page<T> response tipi
+interface SpringPage<T> {
+    content: T[];
+    totalPages: number;
+    totalElements: number;
+    number: number;      // mevcut sayfa (0-indexed)
+    last: boolean;       // son sayfa mı?
+}
 
 export default function ShopModule() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
 
-    // 1. URL'deki Parametreleri Oku
+    // URL parametreleri
     const categoryQuery = searchParams.get("category");
-    const brandQuery = searchParams.get("brand") || "tümü";
-    const priceQuery = Number(searchParams.get("price")) || 20000;
-    const sortQuery = searchParams.get("sort") || "Varsayılan";
-    const searchQuery = searchParams.get("search") || "";
-    const campaignQuery = searchParams.get("campaign") || null; // Kampanya parametresi
+    const brandQuery    = searchParams.get("brand") || "tümü";
+    const priceQuery    = Number(searchParams.get("price")) || 20000;
+    const sortQuery     = searchParams.get("sort") || "Varsayılan";
+    const searchQuery   = searchParams.get("search") || "";
+    const campaignQuery = searchParams.get("campaign") || null;
 
-    const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
+    // Ürün state'leri
+    const [products, setProducts]       = useState<any[]>([]);
+    const [categories, setCategories]   = useState([]);
+    const [page, setPage]               = useState(0);
+    const [totalPages, setTotalPages]   = useState(1);
+    const [isLoading, setIsLoading]     = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    // Fiyat için local state (kasma önleme)
+    // Fiyat slider için local state (kasma önleme)
     const [localPrice, setLocalPrice] = useState(priceQuery);
 
+    // Infinite scroll için sentinel ref
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+    const PAGE_SIZE = 20;
 
     // URL'deki fiyat değiştiğinde local state'i güncelle
     useEffect(() => {
         setLocalPrice(priceQuery);
     }, [priceQuery]);
 
-    // Verileri API'den Çek
+    // Filtre/kategori değiştiğinde sayfayı sıfırla
+    useEffect(() => {
+        setProducts([]);
+        setPage(0);
+        setTotalPages(1);
+    }, [campaignQuery, categoryQuery, brandQuery, priceQuery, sortQuery, searchQuery]);
+
+    // Verileri API'den çek
     useEffect(() => {
         const fetchData = async () => {
+            if (isLoading) return;
+            setIsLoading(true);
+
             try {
-                let productsUrl = `${API_BASE}/products`;
+                // Kategori listesi sadece bir kere çekilir
+                const catPromise = categories.length === 0
+                    ? fetch(`${API_BASE}/categories/main`).then(r => r.json())
+                    : Promise.resolve(null);
 
-                // Kampanyalı ürünler
+                let productsUrl: string;
+
                 if (campaignQuery === "featured") {
+                    // Kampanyalı ürünler — sayfalama yok (genellikle az ürün)
                     productsUrl = `${API_BASE}/products/featured`;
-                }
-                // Kategori bazında
-                else if (categoryQuery) {
-                    productsUrl = `${API_BASE}/products/category/${categoryQuery}`;
+                } else if (categoryQuery) {
+                    // Kategori bazlı — sayfalı
+                    productsUrl = `${API_BASE}/products/category/${categoryQuery}?page=${page}&size=${PAGE_SIZE}`;
+                } else {
+                    // Tüm ürünler — sayfalı
+                    productsUrl = `${API_BASE}/products?page=${page}&size=${PAGE_SIZE}`;
                 }
 
-                const [prodRes, catRes] = await Promise.all([
+                const [prodRes, catData] = await Promise.all([
                     fetch(productsUrl),
-                    fetch(`${API_BASE}/categories/main`)
+                    catPromise,
                 ]);
-                setProducts(await prodRes.json());
-                setCategories(await catRes.json());
+
+                const prodData = await prodRes.json();
+
+                // Spring Page<Product> mi yoksa düz liste mi?
+                if (Array.isArray(prodData)) {
+                    // /featured gibi sayfalama olmayan endpoint'ler
+                    setProducts(prodData);
+                    setTotalPages(1);
+                } else {
+                    // Spring Page<Product>: { content, totalPages, ... }
+                    const springPage: SpringPage<any> = prodData;
+                    setProducts(prev =>
+                        page === 0 ? springPage.content : [...prev, ...springPage.content]
+                    );
+                    setTotalPages(springPage.totalPages);
+                }
+
+                if (catData) setCategories(catData);
+
             } catch (error) {
                 console.error("Veri çekme hatası:", error);
+            } finally {
+                setIsLoading(false);
             }
         };
-        fetchData();
-    }, [campaignQuery, categoryQuery]); // campaignQuery ve categoryQuery'ye göre refetch
 
-    // Ürünlerin içindeki benzersiz markaları ayıkla (slug formatında)
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, campaignQuery, categoryQuery]);
+
+    // Infinite scroll — IntersectionObserver ile sayfa sonunda otomatik yükle
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoading && page + 1 < totalPages) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { rootMargin: "400px" } // sayfa sonuna 400px kala tetikle
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [isLoading, page, totalPages]);
+
+    // Markalar (ürün listesinden çıkar)
     const brands = useMemo(() => {
         const allBrands = products
             .map((p: any) => p.brand)
             .filter(Boolean)
-            .map((brand: string) => brand.toLowerCase().replace(/\s+/g, '-')); // Slug formatına çevir
+            .map((brand: string) => brand.toLowerCase().replace(/\s+/g, '-'));
         return ["tümü", ...Array.from(new Set(allBrands))];
     }, [products]);
 
-    // 2. URL GÜNCELLEME FONKSİYONU - useCallback ile optimize
+    // URL güncelleme
     const updateURL = useCallback((key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
-
         if (value === "tümü" || !value || value === "20000" || value === "Varsayılan") {
             params.delete(key);
         } else {
             params.set(key, value);
         }
-
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     }, [searchParams, router, pathname]);
 
-    // Debounced price update - Fiyat kaydırıcısı için
+    // Fiyat debounce
     useEffect(() => {
         const timer = setTimeout(() => {
             if (localPrice !== priceQuery) {
                 updateURL("price", localPrice.toString());
             }
-        }, 300); // 300ms bekleme
-
+        }, 300);
         return () => clearTimeout(timer);
     }, [localPrice, priceQuery, updateURL]);
 
-    // 3. FİLTRELEME MANTIĞI
+    // Client-side filtreleme (brand, price, sort, search — bunlar URL bazlı)
     const filteredProducts = useMemo(() => {
         let result = [...products];
 
-        // Arama Filtresi - Tüm alanları kontrol et
         if (searchQuery) {
             result = result.filter((p: any) => {
                 const query = searchQuery.toLowerCase();
@@ -111,16 +180,13 @@ export default function ShopModule() {
             });
         }
 
-        // Kategori Filtresi - Hem ana hem alt kategorileri kontrol et
         if (categoryQuery) {
-            result = result.filter((p: any) => {
-                // Ürünün kategorisi veya parent kategorisi eşleşiyorsa göster
-                return p.category?.slug === categoryQuery ||
-                    p.category?.parentCategory?.slug === categoryQuery;
-            });
+            result = result.filter((p: any) =>
+                p.category?.slug === categoryQuery ||
+                p.category?.parentCategory?.slug === categoryQuery
+            );
         }
 
-        // Marka Filtresi (slug karşılaştırması)
         if (brandQuery !== "tümü") {
             result = result.filter((p: any) => {
                 const productBrandSlug = p.brand?.toLowerCase().replace(/\s+/g, '-');
@@ -128,10 +194,8 @@ export default function ShopModule() {
             });
         }
 
-        // Fiyat Filtresi - URL'deki değeri kullan
         result = result.filter((p: any) => p.price <= priceQuery);
 
-        // Sıralama
         if (sortQuery === "Fiyat: Artan") {
             result.sort((a: any, b: any) => a.price - b.price);
         } else if (sortQuery === "Fiyat: Azalan") {
@@ -141,17 +205,18 @@ export default function ShopModule() {
         return result;
     }, [products, searchQuery, categoryQuery, brandQuery, priceQuery, sortQuery]);
 
-    // Tüm filtreleri sıfırla
+    // Filtreleri sıfırla
     const clearAllFilters = useCallback(() => {
         setLocalPrice(20000);
         const params = new URLSearchParams();
-        if (categoryQuery) {
-            params.set("category", categoryQuery);
-        }
+        if (categoryQuery) params.set("category", categoryQuery);
         router.push(pathname + (params.toString() ? `?${params.toString()}` : ""), { scroll: false });
     }, [router, pathname, categoryQuery]);
 
-    const hasActiveFilters = brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan" || searchQuery;
+    const hasActiveFilters =
+        brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan" || searchQuery;
+
+    const hasMore = page + 1 < totalPages;
 
     return (
         <div className="bg-white min-h-screen">
@@ -163,7 +228,9 @@ export default function ShopModule() {
                             ? "🎉 KAMPANYALI ÜRÜNLER"
                             : searchQuery
                                 ? `ARAMA: "${searchQuery}"`
-                                : (categoryQuery ? categoryQuery.replace("-", " ").toUpperCase() : "KOLEKSİYON")}
+                                : (categoryQuery
+                                    ? categoryQuery.replace("-", " ").toUpperCase()
+                                    : "KOLEKSİYON")}
                     </h1>
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -184,8 +251,8 @@ export default function ShopModule() {
                 brands={brands}
                 selectedBrand={brandQuery}
                 setSelectedBrand={(val: string) => updateURL("brand", val)}
-                priceRange={localPrice} // Local state kullan
-                setPriceRange={setLocalPrice} // Direkt local state'i güncelle
+                priceRange={localPrice}
+                setPriceRange={setLocalPrice}
                 sortBy={sortQuery}
                 setSortBy={(val: string) => updateURL("sort", val)}
                 activeCategory={categoryQuery}
@@ -207,7 +274,25 @@ export default function ShopModule() {
                         </button>
                     )}
                 </div>
+
                 <ProductGrid products={filteredProducts} />
+
+                {/* Infinite scroll sentinel */}
+                <div ref={sentinelRef} className="w-full h-1" />
+
+                {/* Loading göstergesi */}
+                {isLoading && (
+                    <div className="flex justify-center py-10">
+                        <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    </div>
+                )}
+
+                {/* Tüm ürünler yüklendi */}
+                {!isLoading && !hasMore && products.length > 0 && (
+                    <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-10">
+                        Tüm ürünler yüklendi
+                    </p>
+                )}
             </main>
         </div>
     );
