@@ -8,16 +8,16 @@ import VariableHelper from "./VariableHelper";
 
 interface TemplateEditorProps {
     template: any;
+    isNew?: boolean;
     onClose: () => void;
 }
 
-export default function TemplateEditor({ template, onClose }: TemplateEditorProps) {
+export default function TemplateEditor({ template, isNew = false, onClose }: TemplateEditorProps) {
     const [activeView, setActiveView] = useState<'split' | 'code' | 'preview'>('split');
     const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
     const [saving, setSaving] = useState(false);
-    const [hasChanges, setHasChanges] = useState(false);
+    const [hasChanges, setHasChanges] = useState(isNew);
 
-    // Form state
     const [formData, setFormData] = useState({
         name: template.name || '',
         templateCode: template.templateCode || '',
@@ -30,30 +30,40 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
         active: template.active ?? true
     });
 
-    // Preview state
     const [previewVariables, setPreviewVariables] = useState<Record<string, string>>({
         customerName: 'Ahmet Yılmaz',
         orderNumber: 'ORD-2024-12345',
         totalAmount: '1,299.99',
         orderDate: new Date().toLocaleDateString('tr-TR'),
         customerEmail: 'ahmet@example.com',
-        registrationDate: new Date().toLocaleDateString('tr-TR')
+        registrationDate: new Date().toLocaleDateString('tr-TR'),
+        resetLink: 'https://sepyaesarp.com/reset-password?token=ornek-token',
+        expiryMinutes: '30',
     });
 
-    // Track changes
     useEffect(() => {
-        setHasChanges(true);
+        if (!isNew) setHasChanges(true);
     }, [formData]);
 
     const handleSave = async () => {
+        if (!formData.templateCode || !formData.name || !formData.subject || !formData.htmlContent) {
+            alert('❌ Template Kodu, Ad, Konu ve HTML İçerik zorunludur!');
+            return;
+        }
+
         setSaving(true);
         try {
-            await emailManagerService.updateTemplate(template.id, formData);
+            if (isNew) {
+                await emailManagerService.createTemplate(formData);
+                alert('✅ Template başarıyla oluşturuldu!');
+            } else {
+                await emailManagerService.updateTemplate(template.id, formData);
+                alert('✅ Template başarıyla kaydedildi!');
+            }
             setHasChanges(false);
-            alert('✅ Template başarıyla kaydedildi!');
             onClose();
         } catch (error) {
-            alert('❌ Kaydetme başarısız!');
+            alert(isNew ? '❌ Oluşturma başarısız!' : '❌ Kaydetme başarısız!');
         } finally {
             setSaving(false);
         }
@@ -70,10 +80,7 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
         const after = text.substring(end);
         const variableTag = `{{${variable}}}`;
 
-        setFormData({
-            ...formData,
-            htmlContent: before + variableTag + after
-        });
+        setFormData({ ...formData, htmlContent: before + variableTag + after });
 
         setTimeout(() => {
             textarea.focus();
@@ -83,7 +90,6 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
 
     return (
         <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
-            {/* HEADER - More spacious */}
             <header className="bg-white border-b border-slate-200 px-8 py-5 shrink-0 shadow-sm">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
@@ -96,10 +102,10 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
                         </button>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-900">
-                                Template Düzenle
+                                {isNew ? 'Yeni Template' : 'Template Düzenle'}
                             </h1>
                             <p className="text-sm text-slate-500 mt-1">
-                                {template.name}
+                                {isNew ? 'Yeni bir email template oluşturun' : template.name}
                             </p>
                         </div>
                         {hasChanges && (
@@ -111,25 +117,19 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* View Mode - Better spacing */}
                         <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1">
                             <button
                                 onClick={() => setActiveView('code')}
                                 className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                                    activeView === 'code'
-                                        ? 'bg-white shadow-sm text-slate-900'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                    activeView === 'code' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                                 }`}
                             >
-                                <Code size={16} className="inline mr-2" />
-                                Kod
+                                <Code size={16} className="inline mr-2" />Kod
                             </button>
                             <button
                                 onClick={() => setActiveView('split')}
                                 className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                                    activeView === 'split'
-                                        ? 'bg-white shadow-sm text-slate-900'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                    activeView === 'split' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                                 }`}
                             >
                                 Bölünmüş
@@ -137,80 +137,46 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
                             <button
                                 onClick={() => setActiveView('preview')}
                                 className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                                    activeView === 'preview'
-                                        ? 'bg-white shadow-sm text-slate-900'
-                                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                    activeView === 'preview' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                                 }`}
                             >
-                                <Eye size={16} className="inline mr-2" />
-                                Önizleme
+                                <Eye size={16} className="inline mr-2" />Önizleme
                             </button>
                         </div>
 
-                        {/* Device Preview */}
                         {(activeView === 'preview' || activeView === 'split') && (
                             <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1">
-                                <button
-                                    onClick={() => setPreviewDevice('mobile')}
-                                    className={`p-2.5 rounded-lg transition-all ${
-                                        previewDevice === 'mobile'
-                                            ? 'bg-white shadow-sm text-slate-900'
-                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                                    }`}
-                                    title="Mobil"
-                                >
-                                    <Smartphone size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setPreviewDevice('tablet')}
-                                    className={`p-2.5 rounded-lg transition-all ${
-                                        previewDevice === 'tablet'
-                                            ? 'bg-white shadow-sm text-slate-900'
-                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                                    }`}
-                                    title="Tablet"
-                                >
-                                    <Tablet size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setPreviewDevice('desktop')}
-                                    className={`p-2.5 rounded-lg transition-all ${
-                                        previewDevice === 'desktop'
-                                            ? 'bg-white shadow-sm text-slate-900'
-                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                                    }`}
-                                    title="Masaüstü"
-                                >
-                                    <Monitor size={18} />
-                                </button>
+                                {(['mobile', 'tablet', 'desktop'] as const).map((d) => {
+                                    const Icon = d === 'mobile' ? Smartphone : d === 'tablet' ? Tablet : Monitor;
+                                    return (
+                                        <button
+                                            key={d}
+                                            onClick={() => setPreviewDevice(d)}
+                                            className={`p-2.5 rounded-lg transition-all ${previewDevice === d ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                        >
+                                            <Icon size={18} />
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
 
-                        {/* Save Button - MUCH MORE VISIBLE */}
                         <button
                             onClick={handleSave}
                             disabled={saving || !hasChanges}
                             className="px-8 py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold flex items-center gap-3 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20"
                         >
                             {saving ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    Kaydediliyor...
-                                </>
+                                <><Loader2 size={18} className="animate-spin" />Kaydediliyor...</>
                             ) : (
-                                <>
-                                    <Save size={18} />
-                                    Kaydet
-                                </>
+                                <><Save size={18} />{isNew ? 'Oluştur' : 'Kaydet'}</>
                             )}
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* MAIN CONTENT */}
             <div className="flex-1 flex overflow-hidden">
-                {/* CODE EDITOR */}
                 {(activeView === 'code' || activeView === 'split') && (
                     <div className={`${activeView === 'split' ? 'w-1/2' : 'w-full'} flex flex-col border-r border-slate-200 bg-white overflow-hidden`}>
                         <CodeEditor
@@ -221,7 +187,6 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
                     </div>
                 )}
 
-                {/* PREVIEW PANEL */}
                 {(activeView === 'preview' || activeView === 'split') && (
                     <div className={`${activeView === 'split' ? 'w-1/2' : 'w-full'} flex flex-col overflow-hidden`}>
                         <PreviewPanel
@@ -234,7 +199,6 @@ export default function TemplateEditor({ template, onClose }: TemplateEditorProp
                 )}
             </div>
 
-            {/* VARIABLE HELPER SIDEBAR */}
             <VariableHelper
                 variables={formData.availableVariables}
                 previewVariables={previewVariables}

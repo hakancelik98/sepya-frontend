@@ -1,12 +1,25 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Mail, BarChart3, FileText } from "lucide-react";
+import { Mail, BarChart3, FileText, Plus } from "lucide-react";
 import { emailManagerService } from "@/app/admin/settings/_services/settingsService";
 import TemplateList from "./_components/TemplateList";
 import TemplateEditor from "./_components/TemplateEditor";
 import EmailLogs from "./_components/EmailLogs";
 import EmailStats from "./_components/EmailStats";
 import TestEmailModal from "./_components/TestEmailModal";
+
+const EMPTY_TEMPLATE = {
+    id: null,
+    name: "",
+    templateCode: "",
+    description: "",
+    subject: "",
+    htmlContent: "",
+    textContent: "",
+    category: "CUSTOMER",
+    availableVariables: "",
+    active: true,
+};
 
 export default function EmailManager() {
     const [activeTab, setActiveTab] = useState<'templates' | 'logs' | 'stats'>('templates');
@@ -15,11 +28,10 @@ export default function EmailManager() {
     const [stats, setStats] = useState<any>({});
     const [loading, setLoading] = useState(true);
 
-    // Editor state
     const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
     const [showEditor, setShowEditor] = useState(false);
+    const [isNewTemplate, setIsNewTemplate] = useState(false);
 
-    // Test modal state
     const [showTestModal, setShowTestModal] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<any | null>(null);
 
@@ -59,13 +71,21 @@ export default function EmailManager() {
 
     const handleEditTemplate = (template: any) => {
         setEditingTemplate(template);
+        setIsNewTemplate(false);
+        setShowEditor(true);
+    };
+
+    const handleNewTemplate = () => {
+        setEditingTemplate({ ...EMPTY_TEMPLATE });
+        setIsNewTemplate(true);
         setShowEditor(true);
     };
 
     const handleCloseEditor = () => {
         setShowEditor(false);
         setEditingTemplate(null);
-        fetchData(); // Refresh data after editing
+        setIsNewTemplate(false);
+        fetchData();
     };
 
     const handleOpenTestModal = (template: any) => {
@@ -78,11 +98,11 @@ export default function EmailManager() {
         setSelectedTemplate(null);
     };
 
-    // Editor açıkken full screen göster
     if (showEditor && editingTemplate) {
         return (
             <TemplateEditor
                 template={editingTemplate}
+                isNew={isNewTemplate}
                 onClose={handleCloseEditor}
             />
         );
@@ -90,7 +110,6 @@ export default function EmailManager() {
 
     return (
         <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
-            {/* HEADER - More spacious and modern */}
             <header className="px-8 py-8 bg-white border-b border-slate-200 shadow-sm shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
@@ -101,26 +120,37 @@ export default function EmailManager() {
                             Template'leri düzenleyin, mail loglarını görüntüleyin ve istatistikleri inceleyin
                         </p>
                     </div>
-                    {stats.todaySent !== undefined && (
-                        <div className="flex gap-4">
-                            <div className="px-6 py-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm">
-                                <p className="text-xs font-semibold text-emerald-600 mb-1">Bugün Gönderilen</p>
-                                <p className="text-3xl font-bold text-emerald-700">{stats.todaySent}</p>
+                    <div className="flex items-center gap-4">
+                        {stats.todaySent !== undefined && (
+                            <div className="flex gap-4">
+                                <div className="px-6 py-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm">
+                                    <p className="text-xs font-semibold text-emerald-600 mb-1">Bugün Gönderilen</p>
+                                    <p className="text-3xl font-bold text-emerald-700">{stats.todaySent}</p>
+                                </div>
+                                <div className="px-6 py-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+                                    <p className="text-xs font-semibold text-blue-600 mb-1">Bu Ay</p>
+                                    <p className="text-3xl font-bold text-blue-700">{stats.monthSent}</p>
+                                </div>
                             </div>
-                            <div className="px-6 py-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
-                                <p className="text-xs font-semibold text-blue-600 mb-1">Bu Ay</p>
-                                <p className="text-3xl font-bold text-blue-700">{stats.monthSent}</p>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                        {/* Yeni Template butonu — her zaman görünür */}
+                        {activeTab === 'templates' && (
+                            <button
+                                onClick={handleNewTemplate}
+                                className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-all shadow-lg"
+                            >
+                                <Plus size={18} />
+                                Yeni Template
+                            </button>
+                        )}
+                    </div>
                 </div>
             </header>
 
-            {/* TABS - More spacious */}
             <div className="bg-white border-b border-slate-200 px-8">
                 <div className="flex gap-2">
                     {[
-                        { id: 'templates', label: 'Template\'ler', icon: FileText, count: templates.length },
+                        { id: 'templates', label: "Template'ler", icon: FileText, count: templates.length },
                         { id: 'logs', label: 'Mail Logları', icon: BarChart3, count: logs.length },
                         { id: 'stats', label: 'İstatistikler', icon: BarChart3 }
                     ].map((tab) => (
@@ -148,7 +178,6 @@ export default function EmailManager() {
                 </div>
             </div>
 
-            {/* CONTENT - More spacious */}
             <main className="flex-1 overflow-auto p-8">
                 {activeTab === 'templates' && (
                     <TemplateList
@@ -157,25 +186,17 @@ export default function EmailManager() {
                         onEdit={handleEditTemplate}
                         onToggle={handleToggleTemplate}
                         onTest={handleOpenTestModal}
+                        onNew={handleNewTemplate}
                     />
                 )}
-
                 {activeTab === 'logs' && (
-                    <EmailLogs
-                        logs={logs}
-                        loading={loading}
-                    />
+                    <EmailLogs logs={logs} loading={loading} />
                 )}
-
                 {activeTab === 'stats' && (
-                    <EmailStats
-                        stats={stats}
-                        loading={loading}
-                    />
+                    <EmailStats stats={stats} loading={loading} />
                 )}
             </main>
 
-            {/* TEST MODAL */}
             {showTestModal && selectedTemplate && (
                 <TestEmailModal
                     template={selectedTemplate}

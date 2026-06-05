@@ -1,5 +1,5 @@
 "use client";
-import { Edit2, Send, Loader2 } from "lucide-react";
+import { Edit2, Send, Loader2, Plus } from "lucide-react";
 
 interface TemplateListProps {
     templates: any[];
@@ -7,13 +7,29 @@ interface TemplateListProps {
     onEdit: (template: any) => void;
     onToggle: (id: number) => void;
     onTest: (template: any) => void;
+    onNew: () => void;
 }
 
-export default function TemplateList({ templates, loading, onEdit, onToggle, onTest }: TemplateListProps) {
+export default function TemplateList({ templates, loading, onEdit, onToggle, onTest, onNew }: TemplateListProps) {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="animate-spin" size={40} />
+            </div>
+        );
+    }
+
+    if (templates.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <p className="text-lg font-bold text-slate-400">Henüz template yok</p>
+                <button
+                    onClick={onNew}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-all"
+                >
+                    <Plus size={16} />
+                    İlk Template'i Oluştur
+                </button>
             </div>
         );
     }
@@ -42,7 +58,6 @@ export default function TemplateList({ templates, loading, onEdit, onToggle, onT
                             <p className="text-[10px] font-mono text-slate-400">{template.templateCode}</p>
                         </div>
 
-                        {/* Toggle Switch */}
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input
                                 type="checkbox"
