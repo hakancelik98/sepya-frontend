@@ -60,19 +60,19 @@ export default function AuthStep({
                                     <h3 className="text-[14px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
                                 </div>
 
-                                {/* Avantajlar Bölümü */}
+                                {/* Avantajlar Bölümü - BÜYÜTÜLMÜŞ */}
                                 <div className="space-y-3 md:space-y-4 mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors" />
-                                        <p className="text-[10px] md:text-xs font-medium text-zinc-400 group-hover:text-zinc-200">Siparişlerinizi kolayca takip edin</p>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
+                                        <p className="text-[11px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Siparişlerinizi kolayca takip edin</p>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors" />
-                                        <p className="text-[10px] md:text-xs font-medium text-zinc-400 group-hover:text-zinc-200">Özel indirim ve kampanyalardan faydalanın</p>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
+                                        <p className="text-[11px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Özel indirim ve kampanyalardan faydalanın</p>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors" />
-                                        <p className="text-[10px] md:text-xs font-medium text-zinc-400 group-hover:text-zinc-200">Favori ürünlerinizi kaydedin</p>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
+                                        <p className="text-[11px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Favori ürünlerinizi kaydedin</p>
                                     </div>
                                 </div>
                             </div>
@@ -91,18 +91,19 @@ export default function AuthStep({
                         </div>
 
                         <div className="space-y-2 md:space-y-3">
-                            {/* Zoom Engelleyici Yeni Kapsayıcı ve Input Yapısı */}
+                            {/* Email Input - Büyük harfler korunacak */}
                             <div className="relative group w-full bg-white border border-zinc-200 rounded-xl h-[46px] md:h-[54px] flex items-center overflow-hidden focus-within:border-black transition-all">
                                 <Mail className="absolute left-3.5 text-zinc-300 group-focus-within:text-black transition-colors z-10" size={14} />
                                 <input
                                     type="email"
                                     placeholder="E-POSTA ADRESİNİZ"
                                     value={guestEmail}
-                                    onChange={(e) => setGuestEmail(e.target.value.toLowerCase())}
+                                    onChange={(e) => setGuestEmail(e.target.value)}
                                     /*
                                       - text-base (16px) ile mobil cihazların zoom yapması engellendi.
                                       - scale ve width oranlarıyla görsel olarak eski küçük (10px-11px) haline getirildi.
                                       - padding değerleri transform ölçeklemesine göre optimize edildi.
+                                      - toLowerCase kaldırıldı, kullanıcı istediği şekilde yazabilecek.
                                     */
                                     className="w-[160%] bg-transparent border-none outline-none text-base font-bold tracking-[0.2em] uppercase text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
                                 />
