@@ -52,7 +52,7 @@ export default function ProductGallery({ images, title }: { images: string[], ti
                             md:w-full md:ml-0 md:left-0 md:h-[600px] md:aspect-auto bg-white">
 
                 <div className="w-full relative h-full flex items-center justify-center">
-                    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                    <AnimatePresence initial={false} custom={direction} mode="wait">
                         <motion.img
                             key={page}
                             src={fixUrl(images[activeIndex])}
