@@ -28,7 +28,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     ].filter(Boolean);
 
     return (
-        <div className="min-h-screen bg-white pt-24 pb-20">
+        <div className="min-h-screen bg-white pt-[91px] md:pt-24 pb-20">
             <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-16">
                 <div className="flex flex-col lg:flex-row gap-0 md:gap-20 items-start">
 
