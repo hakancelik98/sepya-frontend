@@ -183,6 +183,7 @@ export default function TemplateEditor({ template, isNew = false, onClose }: Tem
                             formData={formData}
                             setFormData={setFormData}
                             onInsertVariable={insertVariable}
+                            isNew={isNew}
                         />
                     </div>
                 )}

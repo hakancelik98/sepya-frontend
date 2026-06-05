@@ -6,9 +6,10 @@ interface CodeEditorProps {
     formData: any;
     setFormData: (data: any) => void;
     onInsertVariable: (variable: string) => void;
+    isNew?: boolean;
 }
 
-export default function CodeEditor({ formData, setFormData, onInsertVariable }: CodeEditorProps) {
+export default function CodeEditor({ formData, setFormData, onInsertVariable, isNew = false }: CodeEditorProps) {
     const [activeTab, setActiveTab] = useState<'html' | 'text' | 'settings'>('html');
 
     return (
@@ -206,12 +207,17 @@ Toplam: {{totalAmount}} TL"
                             <input
                                 type="text"
                                 value={formData.templateCode}
-                                onChange={(e) => setFormData({...formData, templateCode: e.target.value})}
-                                className="w-full px-4 py-3.5 border border-slate-200 rounded-xl text-sm font-mono bg-slate-50 text-slate-500 cursor-not-allowed"
-                                disabled
+                                onChange={(e) => setFormData({...formData, templateCode: e.target.value.toUpperCase().replace(/\s/g, '_')})}
+                                className={`w-full px-4 py-3.5 border rounded-xl text-sm font-mono outline-none transition-all ${
+                                    isNew
+                                        ? 'border-slate-300 bg-white text-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-100'
+                                        : 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
+                                }`}
+                                placeholder="ORNEK_TEMPLATE_KODU"
+                                disabled={!isNew}
                             />
                             <p className="text-xs text-slate-500 mt-2">
-                                🔒 Template kodu değiştirilemez
+                                {isNew ? '💡 Büyük harf ve alt çizgi kullanın. Örn: PASSWORD_RESET' : '🔒 Template kodu değiştirilemez'}
                             </p>
                         </div>
 
