@@ -16,7 +16,7 @@ function SkeletonCard({ delay = 0 }: { delay?: number }) {
 export function ProductGridSkeleton() {
     return (
         <div className="px-2 md:px-0">
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[2px] md:gap-x-6 md:gap-y-12">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[6px] md:gap-x-6 md:gap-y-12">
                 {Array.from({ length: 8 }).map((_, i) => (
                     <SkeletonCard key={i} delay={i * 50} />
                 ))}
@@ -54,7 +54,7 @@ export default function ProductGrid({
             {/* Mobilde px-2 → kenarlarda boşluk, masaüstünde px-0 (ShopModule zaten px-6 veriyor) */}
             {/* Mobilde gap-[2px] → slider ile aynı his, masaüstünde normal gap */}
             <div className="px-2 md:px-0">
-                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[2px] md:gap-x-6 md:gap-y-12">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[6px] md:gap-x-6 md:gap-y-12">
                     {products.map((p, index) =>
                             p && (
                                 <ProductCard
