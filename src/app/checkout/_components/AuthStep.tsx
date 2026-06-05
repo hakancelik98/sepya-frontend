@@ -77,7 +77,7 @@ export default function AuthStep({
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 text-[9px] md:text-xs font-black uppercase tracking-widest border-b border-white/20 pb-0.5 w-fit">
+                            <div className="flex items-center gap-2 text-[11px] md:text-xs font-black uppercase tracking-widest border-b border-white/20 pb-0.5 w-fit">
                                 Giriş Yap <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                             </div>
                         </button>
@@ -99,7 +99,7 @@ export default function AuthStep({
                                     placeholder="E-POSTA ADRESİNİZ"
                                     value={guestEmail}
                                     onChange={(e) => setGuestEmail(e.target.value)}
-                                    className="w-[160%] bg-transparent border-none outline-none text-base font-bold tracking-[0.2em] text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
+                                    className="w-[160%] bg-transparent border-none outline-none text-lg font-bold tracking-[0.2em] text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
                                 />
                             </div>
 
