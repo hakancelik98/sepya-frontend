@@ -22,7 +22,7 @@ export default function Brands() {
     const [brands, setBrands] = useState<Brand[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+    const API_URL   = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
     const ASSET_URL = process.env.NEXT_PUBLIC_ASSET_URL?.replace(/\/$/, "");
 
     useEffect(() => {
@@ -45,18 +45,26 @@ export default function Brands() {
         return `${base}${path.startsWith("/") ? path : `/${path}`}`;
     };
 
-    if (loading) return null;
+    // Loading sırasında skeleton göster — CLS'i önler, layout kayması olmaz
+    if (loading) {
+        return (
+            <section className={`w-full bg-white p-2 ${montserrat.className}`}>
+                <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="col-span-1 md:w-[calc(33.333%-6px)] md:h-[250px] aspect-[16/10] md:aspect-auto bg-slate-100 animate-shimmer rounded-sm"
+                        />
+                    ))}
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section className={`w-full bg-white p-2 ${montserrat.className}`}>
-            {/* Mobil: `grid grid-cols-2` düzenini koruyoruz.
-            Masaüstü (md): Grid yerine Flexbox'a geçiyoruz (`md:flex md:flex-wrap`).
-            Bu, son satırdaki elemanların kalan boşluğu doldurmasını sağlayacak.
-        */}
             <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap">
                 {brands.map((brand, i) => {
-                    // MOBİL MODÜLO MANTIĞI:
-                    // i=2 (3. eleman), i=5 (6. eleman) vb. durumlarda mobil için tam genişlik (col-span-2)
                     const isFullWidthMobile = (i + 1) % 3 === 0;
 
                     return (
@@ -64,53 +72,51 @@ export default function Brands() {
                             key={brand.id}
                             href={`/shop?brand=${brand.slug}`}
                             className={`block transition-all duration-300
-                            ${isFullWidthMobile ? "col-span-2" : "col-span-1"} 
-                            /* Masaüstü Flex Ayarları:
-                               w-[calc(33.333%-6px)]: 3 kolonlu düzen için varsayılan genişlik.
-                               md:grow: Son satırdaki 2 elemanın genişlemesini sağlar.
-                               h-[250px]: Tüm masaüstü kartlarının yüksekliğini SABİTLER (bu değeri değiştirebilirsin).
-                               Bu sayede boy-en oranı değişse bile yükseklik aynı kalır.
-                            */
-                            md:w-[calc(33.333%-6px)] md:shrink-0 md:grow md:h-[250px]`}
+                                ${isFullWidthMobile ? "col-span-2" : "col-span-1"}
+                                md:w-[calc(33.333%-6px)] md:shrink-0 md:grow md:h-[250px]`}
                         >
                             <motion.div
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
                                 viewport={{ once: true }}
                                 className={`group relative overflow-hidden bg-neutral-50 shadow-sm w-full h-full ${
-                                    /* Mobilde aspect-ratio'yu koruyoruz, çünkü mobil grid düzeninde 
-                                       yükseklik otomatik hesaplanmalı.
-                                    */
                                     isFullWidthMobile
                                         ? "aspect-[21/9] md:aspect-auto"
                                         : "aspect-[16/10] md:aspect-auto"
                                 }`}
                             >
-                                {/* ARKA PLAN GÖRSELİ */}
-                                <div className="absolute inset-0 z-0">
-                                    <div
-                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] ease-in-out group-hover:scale-110"
-                                        style={{ backgroundImage: `url(${fixUrl(brand.imageUrl)})` }}
+                                {/* Arka plan görseli — background-image yerine <Image> */}
+                                {brand.imageUrl && (
+                                    <Image
+                                        src={fixUrl(brand.imageUrl)}
+                                        alt={brand.name}
+                                        fill
+                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                        className="object-cover object-center transition-transform duration-[1500ms] ease-in-out group-hover:scale-110"
+                                        // İlk 2 marka ekranın üstünde olduğu için priority
+                                        priority={i < 2}
                                     />
-                                    <div className="absolute inset-0 bg-white/0 group-hover:bg-transparent transition-all duration-1000 ease-in-out" />
-                                </div>
+                                )}
 
-                                {/* İÇERİK - Sadece Logo */}
-                                <div className="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center transition-all duration-700">
+                                {/* Hover overlay */}
+                                <div className="absolute inset-0 bg-white/0 group-hover:bg-transparent transition-all duration-1000 ease-in-out z-10" />
+
+                                {/* Logo */}
+                                <div className="relative z-20 h-full flex flex-col items-center justify-center p-4 text-center">
                                     {brand.logoUrl && (
                                         <div className="relative w-20 h-10 md:w-32 md:h-16">
                                             <Image
                                                 src={fixUrl(brand.logoUrl)}
                                                 alt={brand.name}
                                                 fill
+                                                sizes="(max-width: 768px) 80px, 128px"
                                                 className="object-contain filter brightness-0"
-                                                unoptimized
                                             />
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="absolute inset-0 border border-black/[0.03] pointer-events-none" />
+                                <div className="absolute inset-0 border border-black/[0.03] pointer-events-none z-30" />
                             </motion.div>
                         </Link>
                     );

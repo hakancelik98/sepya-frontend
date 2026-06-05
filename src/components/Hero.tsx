@@ -2,64 +2,64 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Hero() {
     const [config, setConfig] = useState<any>(null);
-    const [isMounted, setIsMounted] = useState(false);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+    const API_BASE   = process.env.NEXT_PUBLIC_API_URL;
+    const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
 
     useEffect(() => {
-        setIsMounted(true);
-
         fetch(`${API_BASE}/hero`)
             .then(res => res.json())
             .then(data => setConfig(data))
             .catch(err => console.error("Hero yükleme hatası:", err));
     }, [API_BASE]);
 
-    if (!config) {
-        return <section className="w-full h-[35vh] md:h-screen min-h-[300px] md:min-h-[700px] bg-black" />;
-    }
-
-    const bgImage = config.imageUrl.startsWith("http")
-        ? config.imageUrl
-        : `${process.env.NEXT_PUBLIC_ASSET_URL}${config.imageUrl}`;
+    const bgImage = config?.imageUrl
+        ? config.imageUrl.startsWith("http")
+            ? config.imageUrl
+            : `${ASSET_BASE}${config.imageUrl}`
+        : null;
 
     return (
-        <section
-            className="relative w-full h-[35vh] md:h-screen min-h-[300px] md:min-h-[700px] overflow-hidden bg-black"
-            suppressHydrationWarning
-        >
-            {/* Arka Plan Görseli */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-95 transition-all duration-1000"
-                style={{ backgroundImage: `url('${bgImage}')` }}
-            />
+        // Sabit yükseklik — veri gelmeden önce ve sonra aynı boyut → CLS sıfır
+        <section className="relative w-full h-[35vh] md:h-screen min-h-[300px] md:min-h-[700px] overflow-hidden bg-black">
 
-            {/* Alt Kısımdaki Butonun Okunabilirliği İçin Yumuşak Karartma (Gradient) */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50" />
+            {/* Görsel: background-image yerine Next.js Image → LCP için preload edilir */}
+            {bgImage && (
+                <Image
+                    src={bgImage}
+                    alt="Hero"
+                    fill
+                    priority          // <link rel="preload"> üretir — LCP görseli için şart
+                    fetchPriority="high"
+                    sizes="100vw"
+                    className="object-cover object-center opacity-95"
+                />
+            )}
 
-            {/* Butonun Konumlandırıldığı Ana Kapsayıcı */}
-            <div className="absolute bottom-8 md:bottom-16 left-0 right-0 flex justify-center items-center z-10">
-                {isMounted && (
+            {/* Skeleton: görsel yüklenene kadar siyah arka plan zaten var, ekstra shimmer gerekmez */}
+
+            {/* Alt gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 z-10" />
+
+            {/* Buton */}
+            <div className="absolute bottom-8 md:bottom-16 left-0 right-0 flex justify-center items-center z-20">
+                {config && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
                     >
-                        {/* Yeni Şekilli ve Modern Buton Tasarımı */}
                         <Link
                             href={config.buttonLink || "/shop"}
                             className="group relative inline-flex items-center justify-center px-10 py-4 md:px-16 md:py-5 overflow-hidden font-black uppercase tracking-[0.25em] text-[10px] md:text-xs text-white border-2 border-white rounded-full transition-all duration-500 hover:text-black shadow-2xl backdrop-blur-sm"
                         >
-                            {/* Buton Hover Efekti İçin Arka Plan Animasyon Katmanı */}
                             <span className="absolute inset-0 w-full h-full bg-white transition-all duration-500 ease-out transform scale-x-0 group-hover:scale-x-100 origin-center z-0" />
-
-                            {/* Buton Metni (Z-index ile en üste alındı) */}
                             <span className="relative z-10 flex items-center gap-2">
                                 {config.buttonText}
-                                {/* Şık bir ok işareti (Opsiyonel, modern durması için eklendi) */}
                                 <svg
                                     className="w-4 h-4 transform transition-transform duration-500 group-hover:translate-x-1"
                                     fill="none"
