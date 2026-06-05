@@ -245,8 +245,8 @@ export default function ShopModule() {
                 campaign={campaignQuery}
             />
 
-            <main className="max-w-[1400px] mx-auto px-6 py-12">
-                <div className="flex justify-between items-center mb-8">
+            <main className="max-w-[1400px] mx-auto px-0 md:px-6 py-12">
+                <div className="flex justify-between items-center mb-8 px-2 md:px-0">
                     <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                         {filteredProducts.length} Ürün Listeleniyor
                     </div>
