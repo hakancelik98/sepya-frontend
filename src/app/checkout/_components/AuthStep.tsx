@@ -57,7 +57,7 @@ export default function AuthStep({
                                     <div className="bg-white/10 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0">
                                         <UserCircle2 className="text-white w-5 h-5 md:w-6 md:h-6" />
                                     </div>
-                                    <h3 className="text-[13px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
+                                    <h3 className="text-[14px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
                                 </div>
 
                                 {/* Avantajlar Bölümü - MOBİLDE DAHA BÜYÜK */}
@@ -86,7 +86,7 @@ export default function AuthStep({
                     {/* Misafir Bölümü */}
                     <div className="bg-zinc-50 border border-zinc-100 rounded-2xl md:rounded-[2.5rem] p-5 md:p-10 flex flex-col justify-center">
                         <div className="mb-4 md:mb-6">
-                            <h3 className="text-[13px] md:text-lg font-black uppercase tracking-wider text-zinc-900 mb-1 md:mb-2">Misafir</h3>
+                            <h3 className="text-[14px] md:text-lg font-black uppercase tracking-wider text-zinc-900 mb-1 md:mb-2">Misafir</h3>
                             <p className="text-[11px] md:text-sm text-zinc-500 leading-tight">Üye olmadan devam edin.</p>
                         </div>
 
@@ -99,13 +99,13 @@ export default function AuthStep({
                                     placeholder="E-POSTA ADRESİNİZ"
                                     value={guestEmail}
                                     onChange={(e) => setGuestEmail(e.target.value)}
-                                    className="w-[160%] bg-transparent border-none outline-none text-base font-bold tracking-[0.2em] uppercase text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
+                                    className="w-[160%] bg-transparent border-none outline-none text-base font-bold tracking-[0.2em] text-zinc-900 placeholder:text-zinc-300 transform origin-left scale-[0.625] pl-18 pr-4"
                                 />
                             </div>
 
                             <button
                                 onClick={onGuestContinue}
-                                className="w-full bg-white border-2 border-zinc-900 text-zinc-900 py-3 md:py-4 rounded-xl text-[11px] md:text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all duration-300 active:scale-[0.99]"
+                                className="w-full bg-white border-2 border-zinc-900 text-zinc-900 py-3 md:py-4 rounded-xl text-[12px] md:text-sm font-black uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all duration-300 active:scale-[0.99]"
                             >
                                 Devam Et
                             </button>
