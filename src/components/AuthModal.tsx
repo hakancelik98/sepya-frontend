@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 type AuthModalProps = {
     isOpen: boolean;
@@ -10,12 +11,15 @@ type AuthModalProps = {
     initialView?: "login" | "register";
 };
 
+type View = "login" | "register" | "forgot" | "forgot-sent";
+
 export default function AuthModal({ isOpen, onClose, initialView = "login" }: AuthModalProps) {
-    const [view, setView] = useState<"login" | "register">(initialView);
+    const [view, setView] = useState<View>(initialView);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
     const { syncGuestCartToBackend } = useCart();
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({
         firstName: "",
@@ -25,11 +29,14 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
         phone: ""
     });
 
+    const [forgotEmail, setForgotEmail] = useState("");
+
     useEffect(() => {
         if (isOpen) {
             setView(initialView);
             setError("");
             setFormData({ firstName: "", lastName: "", email: "", password: "", phone: "" });
+            setForgotEmail("");
         }
     }, [isOpen, initialView]);
 
@@ -69,8 +76,7 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
             }
 
             if (response.ok) {
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user));
+                login(data.token, data.user);
 
                 try {
                     await syncGuestCartToBackend();
@@ -83,14 +89,10 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
             } else {
                 let errorMessage = "İşlem başarısız.";
 
-                // ✅ Backend'den gelen "Beklenmeyen bir hata oluştu" mesajını kontrol et
                 if (response.status === 500) {
-                    // Eğer login sırasında 500 geliyorsa, büyük ihtimalle credential hatası
-                    if (view === "login") {
-                        errorMessage = "E-posta veya şifre hatalı";
-                    } else {
-                        errorMessage = "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.";
-                    }
+                    errorMessage = view === "login"
+                        ? "E-posta veya şifre hatalı"
+                        : "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.";
                 } else if (response.status === 401 || response.status === 400) {
                     errorMessage = "E-posta veya şifre hatalı";
                 } else if (response.status === 409) {
@@ -109,7 +111,35 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
         }
     };
 
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
+        try {
+            const API_BASE = process.env.NEXT_PUBLIC_ASSET_URL ?? "";
+
+            const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: forgotEmail })
+            });
+
+            // Başarılı veya başarısız fark etmez, güvenlik için hep aynı mesajı göster
+            setView("forgot-sent");
+        } catch (err) {
+            console.error("Şifremi unuttum hatası:", err);
+            // Yine de "gönderildi" sayfasına geç — sunucu hatalarını kullanıcıya yansıtma
+            setView("forgot-sent");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
+
+    // Sol taraf görseli: forgot ekranlarında login görselini kullan
+    const sideImage = view === "register" ? "/register-side.jpg" : "/login-side.jpg";
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-[150] p-4">
@@ -132,7 +162,7 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                 <div className="w-1/2 relative hidden md:block overflow-hidden bg-zinc-100">
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={view}
+                            key={sideImage}
                             initial={{ opacity: 0, scale: 1.1 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.1 }}
@@ -140,7 +170,7 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                             className="absolute inset-0"
                         >
                             <Image
-                                src={view === "login" ? "/login-side.jpg" : "/register-side.jpg"}
+                                src={sideImage}
                                 alt="Sepya Auth"
                                 fill
                                 className="object-cover"
@@ -161,7 +191,9 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                     </button>
 
                     <AnimatePresence mode="wait">
-                        {view === "login" ? (
+
+                        {/* ── GİRİŞ YAP ── */}
+                        {view === "login" && (
                             <motion.div
                                 key="login"
                                 initial={{ opacity: 0, x: 20 }}
@@ -205,6 +237,18 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                                         onChange={handleInputChange}
                                         className="w-full border-b border-gray-200 py-3 outline-none focus:border-black transition-all text-gray-900 font-bold placeholder:text-gray-400 placeholder:font-medium"
                                     />
+
+                                    {/* Şifremi unuttum linki */}
+                                    <div className="text-right">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setError(""); setView("forgot"); }}
+                                            className="text-xs text-gray-400 hover:text-black transition-colors font-medium"
+                                        >
+                                            Şifremi unuttum
+                                        </button>
+                                    </div>
+
                                     <button
                                         disabled={loading}
                                         className="w-full bg-black text-white py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-xl active:scale-[0.98] disabled:bg-gray-400"
@@ -223,7 +267,10 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                                     </button>
                                 </p>
                             </motion.div>
-                        ) : (
+                        )}
+
+                        {/* ── KAYIT OL ── */}
+                        {view === "register" && (
                             <motion.div
                                 key="register"
                                 initial={{ opacity: 0, x: 20 }}
@@ -315,6 +362,111 @@ export default function AuthModal({ isOpen, onClose, initialView = "login" }: Au
                                 </p>
                             </motion.div>
                         )}
+
+                        {/* ── ŞİFREMİ UNUTTUM ── */}
+                        {view === "forgot" && (
+                            <motion.div
+                                key="forgot"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                <div>
+                                    <h2 className="text-3xl font-black text-black tracking-tighter uppercase">
+                                        Şifremi Unuttum
+                                    </h2>
+                                    <p className="text-gray-500 text-[13px] mt-2 font-medium uppercase tracking-wider">
+                                        E-posta adresinize sıfırlama bağlantısı göndereceğiz.
+                                    </p>
+                                </div>
+
+                                {error && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-red-600 text-xs font-bold bg-red-50 p-3 rounded-lg text-center border border-red-200"
+                                    >
+                                        {error}
+                                    </motion.p>
+                                )}
+
+                                <form onSubmit={handleForgotPassword} className="space-y-5">
+                                    <input
+                                        type="email"
+                                        placeholder="E-posta adresiniz"
+                                        required
+                                        value={forgotEmail}
+                                        onChange={(e) => setForgotEmail(e.target.value)}
+                                        className="w-full border-b border-gray-200 py-3 outline-none focus:border-black transition-all text-gray-900 font-bold placeholder:text-gray-400 placeholder:font-medium"
+                                    />
+                                    <button
+                                        disabled={loading}
+                                        className="w-full bg-black text-white py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-xl active:scale-[0.98] disabled:bg-gray-400"
+                                    >
+                                        {loading ? "Gönderiliyor..." : "Sıfırlama Bağlantısı Gönder"}
+                                    </button>
+                                </form>
+
+                                <p className="text-[13px] text-gray-500 text-center font-bold">
+                                    <button
+                                        onClick={() => { setError(""); setView("login"); }}
+                                        className="text-black border-b border-black pb-0.5"
+                                    >
+                                        ← Giriş sayfasına dön
+                                    </button>
+                                </p>
+                            </motion.div>
+                        )}
+
+                        {/* ── GÖNDERILDI ONAY EKRANI ── */}
+                        {view === "forgot-sent" && (
+                            <motion.div
+                                key="forgot-sent"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="space-y-8 text-center"
+                            >
+                                {/* İkon */}
+                                <div className="flex justify-center">
+                                    <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center">
+                                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h2 className="text-3xl font-black text-black tracking-tighter uppercase">
+                                        Mail Gönderildi
+                                    </h2>
+                                    <p className="text-gray-500 text-[13px] mt-3 font-medium leading-relaxed">
+                                        Eğer <span className="text-black font-bold">{forgotEmail}</span> adresine kayıtlı
+                                        bir hesap varsa, şifre sıfırlama bağlantısı gönderildi.
+                                    </p>
+                                    <p className="text-gray-400 text-[12px] mt-2">
+                                        Bağlantı 30 dakika geçerlidir. Gelen kutusu ile spam klasörünüzü kontrol edin.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={() => { setError(""); setForgotEmail(""); setView("forgot"); }}
+                                        className="w-full border border-gray-200 text-gray-600 py-3 rounded-xl font-bold text-xs uppercase tracking-[0.15em] hover:border-black hover:text-black transition-all"
+                                    >
+                                        Tekrar Gönder
+                                    </button>
+                                    <button
+                                        onClick={() => { setError(""); setView("login"); }}
+                                        className="w-full bg-black text-white py-4 rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all shadow-xl"
+                                    >
+                                        Giriş Sayfasına Dön
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
                     </AnimatePresence>
                 </div>
             </motion.div>
