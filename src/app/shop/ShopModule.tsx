@@ -6,13 +6,12 @@ import FilterSidebar from "./components/FilterSidebar";
 import ProductGrid from "./components/ProductGrid";
 import { SlidersHorizontal, X } from "lucide-react";
 
-// Spring Page<T> response tipi
 interface SpringPage<T> {
     content: T[];
     totalPages: number;
     totalElements: number;
-    number: number;      // mevcut sayfa (0-indexed)
-    last: boolean;       // son sayfa mı?
+    number: number;
+    last: boolean;
 }
 
 export default function ShopModule() {
@@ -20,7 +19,6 @@ export default function ShopModule() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // URL parametreleri
     const categoryQuery = searchParams.get("category");
     const brandQuery    = searchParams.get("brand") || "tümü";
     const priceQuery    = Number(searchParams.get("price")) || 20000;
@@ -28,43 +26,43 @@ export default function ShopModule() {
     const searchQuery   = searchParams.get("search") || "";
     const campaignQuery = searchParams.get("campaign") || null;
 
-    // Ürün state'leri
-    const [products, setProducts]       = useState<any[]>([]);
-    const [categories, setCategories]   = useState([]);
-    const [page, setPage]               = useState(0);
-    const [totalPages, setTotalPages]   = useState(1);
-    const [isLoading, setIsLoading]     = useState(false);
+    const [products, setProducts]         = useState<any[]>([]);
+    const [categories, setCategories]     = useState([]);
+    const [page, setPage]                 = useState(0);
+    const [totalPages, setTotalPages]     = useState(1);
+    const [isLoading, setIsLoading]       = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [resetKey, setResetKey]         = useState(0);
 
-    // Fiyat slider için local state (kasma önleme)
     const [localPrice, setLocalPrice] = useState(priceQuery);
-
-    // Infinite scroll için sentinel ref
     const sentinelRef = useRef<HTMLDivElement>(null);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+    const API_BASE  = process.env.NEXT_PUBLIC_API_URL;
     const PAGE_SIZE = 20;
 
-    // URL'deki fiyat değiştiğinde local state'i güncelle
     useEffect(() => {
         setLocalPrice(priceQuery);
     }, [priceQuery]);
 
-    // Filtre/kategori değiştiğinde sayfayı sıfırla
+    // Filtre değişince sıfırla + fetch tetikle
     useEffect(() => {
         setProducts([]);
-        setPage(0);
         setTotalPages(1);
+        if (page === 0) {
+            setResetKey(k => k + 1);
+        } else {
+            setPage(0);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [campaignQuery, categoryQuery, brandQuery, priceQuery, sortQuery, searchQuery]);
 
-    // Verileri API'den çek
+    // Veri çekme
     useEffect(() => {
         const fetchData = async () => {
             if (isLoading) return;
             setIsLoading(true);
 
             try {
-                // Kategori listesi sadece bir kere çekilir
                 const catPromise = categories.length === 0
                     ? fetch(`${API_BASE}/categories/main`).then(r => r.json())
                     : Promise.resolve(null);
@@ -72,13 +70,10 @@ export default function ShopModule() {
                 let productsUrl: string;
 
                 if (campaignQuery === "featured") {
-                    // Kampanyalı ürünler — sayfalama yok (genellikle az ürün)
                     productsUrl = `${API_BASE}/products/featured`;
                 } else if (categoryQuery) {
-                    // Kategori bazlı — sayfalı
                     productsUrl = `${API_BASE}/products/category/${categoryQuery}?page=${page}&size=${PAGE_SIZE}`;
                 } else {
-                    // Tüm ürünler — sayfalı
                     productsUrl = `${API_BASE}/products?page=${page}&size=${PAGE_SIZE}`;
                 }
 
@@ -89,13 +84,10 @@ export default function ShopModule() {
 
                 const prodData = await prodRes.json();
 
-                // Spring Page<Product> mi yoksa düz liste mi?
                 if (Array.isArray(prodData)) {
-                    // /featured gibi sayfalama olmayan endpoint'ler
                     setProducts(prodData);
                     setTotalPages(1);
                 } else {
-                    // Spring Page<Product>: { content, totalPages, ... }
                     const springPage: SpringPage<any> = prodData;
                     setProducts(prev =>
                         page === 0 ? springPage.content : [...prev, ...springPage.content]
@@ -114,9 +106,9 @@ export default function ShopModule() {
 
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, campaignQuery, categoryQuery]);
+    }, [page, resetKey, campaignQuery, categoryQuery]);
 
-    // Infinite scroll — IntersectionObserver ile sayfa sonunda otomatik yükle
+    // Infinite scroll
     useEffect(() => {
         const sentinel = sentinelRef.current;
         if (!sentinel) return;
@@ -127,14 +119,13 @@ export default function ShopModule() {
                     setPage(prev => prev + 1);
                 }
             },
-            { rootMargin: "400px" } // sayfa sonuna 400px kala tetikle
+            { rootMargin: "400px" }
         );
 
         observer.observe(sentinel);
         return () => observer.disconnect();
     }, [isLoading, page, totalPages]);
 
-    // Markalar (ürün listesinden çıkar)
     const brands = useMemo(() => {
         const allBrands = products
             .map((p: any) => p.brand)
@@ -143,7 +134,6 @@ export default function ShopModule() {
         return ["tümü", ...Array.from(new Set(allBrands))];
     }, [products]);
 
-    // URL güncelleme
     const updateURL = useCallback((key: string, value: string) => {
         const params = new URLSearchParams(searchParams.toString());
         if (value === "tümü" || !value || value === "20000" || value === "Varsayılan") {
@@ -154,7 +144,6 @@ export default function ShopModule() {
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     }, [searchParams, router, pathname]);
 
-    // Fiyat debounce
     useEffect(() => {
         const timer = setTimeout(() => {
             if (localPrice !== priceQuery) {
@@ -164,7 +153,6 @@ export default function ShopModule() {
         return () => clearTimeout(timer);
     }, [localPrice, priceQuery, updateURL]);
 
-    // Client-side filtreleme (brand, price, sort, search — bunlar URL bazlı)
     const filteredProducts = useMemo(() => {
         let result = [...products];
 
@@ -205,7 +193,6 @@ export default function ShopModule() {
         return result;
     }, [products, searchQuery, categoryQuery, brandQuery, priceQuery, sortQuery]);
 
-    // Filtreleri sıfırla
     const clearAllFilters = useCallback(() => {
         setLocalPrice(20000);
         const params = new URLSearchParams();
@@ -214,13 +201,12 @@ export default function ShopModule() {
     }, [router, pathname, categoryQuery]);
 
     const hasActiveFilters =
-        brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan" || searchQuery;
+        brandQuery !== "tümü" || priceQuery < 20000 || sortQuery !== "Varsayılan" || !!searchQuery;
 
     const hasMore = page + 1 < totalPages;
 
     return (
         <div className="bg-white min-h-screen">
-            {/* Header */}
             <div className="bg-white border-b border-slate-100 px-6 py-4 pt-10">
                 <div className="max-w-[1400px] mx-auto flex justify-between items-center">
                     <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-900">
@@ -244,7 +230,6 @@ export default function ShopModule() {
                 </div>
             </div>
 
-            {/* Filtre Paneli */}
             <FilterSidebar
                 isOpen={isFilterOpen}
                 categories={categories}
@@ -275,19 +260,16 @@ export default function ShopModule() {
                     )}
                 </div>
 
-                <ProductGrid products={filteredProducts} />
+                <ProductGrid products={filteredProducts} isLoading={isLoading} />
 
-                {/* Infinite scroll sentinel */}
                 <div ref={sentinelRef} className="w-full h-1" />
 
-                {/* Loading göstergesi */}
-                {isLoading && (
+                {isLoading && products.length > 0 && (
                     <div className="flex justify-center py-10">
                         <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
                     </div>
                 )}
 
-                {/* Tüm ürünler yüklendi */}
                 {!isLoading && !hasMore && products.length > 0 && (
                     <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-10">
                         Tüm ürünler yüklendi
