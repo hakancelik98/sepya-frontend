@@ -182,7 +182,8 @@ export default function CheckoutSummary({
                                                                 )
                                                             }
                                                             placeholder="KUPON"
-                                                            className="flex-1 border-2 border-zinc-200 rounded-lg md:rounded-xl px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm font-black uppercase tracking-wider outline-none focus:border-black transition-colors"
+                                                            style={{ fontSize: "16px" }}
+                                                            className="flex-1 border-2 border-zinc-200 rounded-lg md:rounded-xl px-3 md:px-4 py-2 md:py-3 md:text-sm font-black uppercase tracking-wider outline-none focus:border-black transition-colors"
                                                         />
                                                         <button
                                                             onClick={onApplyCoupon}
