@@ -38,7 +38,7 @@ export default function AuthStep({
                     <h1 className="text-lg md:text-4xl font-black uppercase tracking-tighter text-zinc-900 mb-1 md:mb-2">
                         Ödeme Süreci
                     </h1>
-                    <p className="text-[9px] md:text-[11px] text-zinc-400 font-bold uppercase tracking-[0.2em]">
+                    <p className="text-[9px] md:text-[12px] text-zinc-400 font-bold uppercase tracking-[0.2em]">
                         Bir yöntem seçin
                     </p>
                 </div>
@@ -57,22 +57,22 @@ export default function AuthStep({
                                     <div className="bg-white/10 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0">
                                         <UserCircle2 className="text-white w-5 h-5 md:w-6 md:h-6" />
                                     </div>
-                                    <h3 className="text-[14px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
+                                    <h3 className="text-[16px] md:text-xl font-black uppercase tracking-wider">Kayıtlı Müşteri</h3>
                                 </div>
 
                                 {/* Avantajlar Bölümü - MOBİLDE DAHA BÜYÜK */}
                                 <div className="space-y-3 md:space-y-4 mb-8">
                                     <div className="flex items-start gap-3">
                                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
-                                        <p className="text-[12px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Siparişlerinizi kolayca takip edin</p>
+                                        <p className="text-[13px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Siparişlerinizi kolayca takip edin</p>
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
-                                        <p className="text-[12px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Özel indirim ve kampanyalardan faydalanın</p>
+                                        <p className="text-[13px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Özel indirim ve kampanyalardan faydalanın</p>
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full group-hover:bg-white transition-colors mt-1.5 shrink-0" />
-                                        <p className="text-[12px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Favori ürünlerinizi kaydedin</p>
+                                        <p className="text-[13px] md:text-sm font-medium text-zinc-400 group-hover:text-zinc-200 leading-relaxed">Favori ürünlerinizi kaydedin</p>
                                     </div>
                                 </div>
                             </div>
@@ -86,8 +86,8 @@ export default function AuthStep({
                     {/* Misafir Bölümü */}
                     <div className="bg-zinc-50 border border-zinc-100 rounded-2xl md:rounded-[2.5rem] p-5 md:p-10 flex flex-col justify-center">
                         <div className="mb-4 md:mb-6">
-                            <h3 className="text-[14px] md:text-lg font-black uppercase tracking-wider text-zinc-900 mb-1 md:mb-2">Misafir</h3>
-                            <p className="text-[11px] md:text-sm text-zinc-500 leading-tight">Üye olmadan devam edin.</p>
+                            <h3 className="text-[16px] md:text-lg font-black uppercase tracking-wider text-zinc-900 mb-1 md:mb-2">Misafir</h3>
+                            <p className="text-[13px] md:text-sm text-zinc-500 leading-tight">Üye olmadan devam edin.</p>
                         </div>
 
                         <div className="space-y-2 md:space-y-3">
