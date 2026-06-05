@@ -30,7 +30,7 @@ export function useProducts() {
         setError(null);
         try {
             const [prodRes, catRes, brandRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/products`),
+                axios.get(`${API_BASE_URL}/products?all=true`),
                 axios.get(`${API_BASE_URL}/categories`),
                 axios.get(`${API_BASE_URL}/brands`)
             ]);
