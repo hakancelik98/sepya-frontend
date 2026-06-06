@@ -44,7 +44,7 @@ export default function ShopModule() {
         setLocalPrice(priceQuery);
     }, [priceQuery]);
 
-    // Filtre değişince sıfırla + fetch tetikle
+    // Filtre değişince ürünleri sıfırla ve başa dön
     useEffect(() => {
         setProducts([]);
         setTotalPages(1);
@@ -70,8 +70,10 @@ export default function ShopModule() {
                 let productsUrl: string;
 
                 if (campaignQuery === "featured") {
+                    // Kampanyalı ürünler: array döner, sayfalama yok
                     productsUrl = `${API_BASE}/products/featured`;
                 } else if (categoryQuery) {
+                    // FIX: Kategori filtresi backend'e gönderiliyor — frontend'de tekrar uygulanmıyor
                     productsUrl = `${API_BASE}/products/category/${categoryQuery}?page=${page}&size=${PAGE_SIZE}`;
                 } else {
                     productsUrl = `${API_BASE}/products?page=${page}&size=${PAGE_SIZE}`;
@@ -82,12 +84,19 @@ export default function ShopModule() {
                     catPromise,
                 ]);
 
+                if (!prodRes.ok) {
+                    console.error("Ürün fetch hatası:", prodRes.status, prodRes.statusText);
+                    return;
+                }
+
                 const prodData = await prodRes.json();
 
                 if (Array.isArray(prodData)) {
+                    // Featured gibi düz array dönen endpointler
                     setProducts(prodData);
                     setTotalPages(1);
                 } else {
+                    // Spring Page objesi
                     const springPage: SpringPage<any> = prodData;
                     setProducts(prev =>
                         page === 0 ? springPage.content : [...prev, ...springPage.content]
@@ -153,9 +162,22 @@ export default function ShopModule() {
         return () => clearTimeout(timer);
     }, [localPrice, priceQuery, updateURL]);
 
+    /**
+     * FIX: Çift filtreleme kaldırıldı.
+     *
+     * Önceki kodda categoryQuery hem backend URL'ine gönderiliyordu
+     * hem de burada tekrar uygulanıyordu. Bu, sayfalama açıkken
+     * bir sayfadan gelen 20 ürünün bir kısmının filtrelenmesine ve
+     * görünür ürün sayısının düşmesine yol açıyordu.
+     *
+     * Kural:
+     *  - Kategori filtresi → backend URL'i ile yapılır (yukarıda)
+     *  - Brand, fiyat, arama, sıralama → client-side yapılır (burada)
+     */
     const filteredProducts = useMemo(() => {
         let result = [...products];
 
+        // Arama filtresi (client-side)
         if (searchQuery) {
             result = result.filter((p: any) => {
                 const query = searchQuery.toLowerCase();
@@ -168,13 +190,10 @@ export default function ShopModule() {
             });
         }
 
-        if (categoryQuery) {
-            result = result.filter((p: any) =>
-                p.category?.slug === categoryQuery ||
-                p.category?.parentCategory?.slug === categoryQuery
-            );
-        }
+        // FIX: categoryQuery filtresi KALDIRILDI — backend zaten filtreliyor
+        // Eski kod burada tekrar filtreliyordu, bu sayfalama bozukluğuna yol açıyordu
 
+        // Marka filtresi (client-side)
         if (brandQuery !== "tümü") {
             result = result.filter((p: any) => {
                 const productBrandSlug = p.brand?.toLowerCase().replace(/\s+/g, '-');
@@ -182,8 +201,10 @@ export default function ShopModule() {
             });
         }
 
+        // Fiyat filtresi (client-side)
         result = result.filter((p: any) => p.price <= priceQuery);
 
+        // Sıralama (client-side)
         if (sortQuery === "Fiyat: Artan") {
             result.sort((a: any, b: any) => a.price - b.price);
         } else if (sortQuery === "Fiyat: Azalan") {
@@ -191,7 +212,8 @@ export default function ShopModule() {
         }
 
         return result;
-    }, [products, searchQuery, categoryQuery, brandQuery, priceQuery, sortQuery]);
+    }, [products, searchQuery, brandQuery, priceQuery, sortQuery]);
+    // FIX: categoryQuery bağımlılıktan kaldırıldı (artık filtrede kullanılmıyor)
 
     const clearAllFilters = useCallback(() => {
         setLocalPrice(20000);
