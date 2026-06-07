@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Toaster } from "react-hot-toast";
@@ -10,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
 import AuthModal from "@/components/AuthModal";
-import Features from "@/components/Features";
+// FIX: Features layout.tsx'e taşındı — server component olarak render edilir, CLS önlenir
 
 function AuthModalWrapper() {
     const { isAuthModalOpen, authModalView, closeAuthModal } = useAuth();
@@ -32,24 +31,18 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
         setMounted(true);
     }, []);
 
-    const mainClass = !mounted ? "pt-0" : "pt-0";
-
     return (
         <SettingsProvider>
             <AuthProvider>
                 <CartProvider>
                     {!isAdminPage && <Header />}
-
                     <CartDrawer />
                     <AuthModalWrapper />
-
-                    <main className={mainClass}>
+                    <main className="pt-0">
                         {children}
                     </main>
-
-                    {!isAdminPage && <Features />}
+                    {/* FIX: Features burada değil, layout.tsx'te server component olarak */}
                     {!isAdminPage && <Footer />}
-
                     <Toaster position="top-right" />
                 </CartProvider>
             </AuthProvider>

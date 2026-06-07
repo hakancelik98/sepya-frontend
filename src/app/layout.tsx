@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientWrapper from "@/components/ClientWrapper";
+import Features from "@/components/Features";
 import type { Metadata } from "next";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
         template: `%s | ${SITE_NAME}`,
     },
     description: "Türkiye'nin en zarif ipek eşarp, şal ve fular koleksiyonu. LaBoutique, Armine ve daha fazlası. Ücretsiz kargo, 14 gün iade.",
-    keywords: ["ipek eşarp", "şal", "fular", "başörtü", "LaBoutique", "Armine", "eşarp", "ipek şal"],
+    keywords: ["ipek eşarp", "şal", "fular", "başörtü", "LaBoutique", "Armine", "eşarp", "ipek şal", "armine", "samsun",
+    "samsun eşarp", "samsun şal", "samsun fular", "samsun başörtü", "samsun ipek eşarp", "samsun ipek şal", "samsun ipek fular", "samsun ipek başörtü"],
     authors: [{ name: SITE_NAME }],
     creator: SITE_NAME,
     publisher: SITE_NAME,
@@ -66,6 +68,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ClientWrapper>
             {children}
+            {/* Features server component olarak burada — ClientWrapper hydration'ını beklemez */}
+            <Features />
         </ClientWrapper>
         </body>
         </html>
