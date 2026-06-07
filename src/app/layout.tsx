@@ -56,8 +56,7 @@ export const metadata: Metadata = {
         canonical: SITE_URL,
     },
     verification: {
-        // Google Search Console doğrulama kodunu buraya ekle
-        // google: "xxxxxxxxxxxx",
+        google: "grQT9vvt-mSJEsFo20e75fMY8NVjTXzLpStF3FOd3Bg",
     },
 };
 
