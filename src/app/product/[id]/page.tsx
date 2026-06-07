@@ -1,65 +1,95 @@
-"use client";
-import { use, useState, useEffect } from "react";
-import ProductGallery from "./components/ProductGallery";
-import ProductInfo from "./components/ProductInfo";
-import RecommendedProducts from "./components/RecommendedProducts";
+// app/product/[id]/page.tsx
+// Server component — generateMetadata burada çalışır
+import type { Metadata } from "next";
+import ProductPageClient from "./ProductPageClient";
 
-export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-    // Parametre slug veya numeric id olabilir
-    const { id: slugOrId } = use(params);
-    const [product, setProduct] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://sepyaesarp.com/api";
+const SITE_URL = "https://sepyaesarp.com";
+const SITE_NAME = "Sepya Eşarp";
 
-    useEffect(() => {
-        if (!slugOrId) return;
-        setLoading(true);
-        fetch(`${API_BASE}/products/${slugOrId}`)
-            .then(res => {
-                if (!res.ok) throw new Error("Ürün bulunamadı");
-                return res.json();
-            })
-            .then(data => setProduct(data))
-            .catch(err => console.error("Ürün yüklenemedi:", err))
-            .finally(() => setLoading(false));
-    }, [slugOrId]);
+async function getProduct(slugOrId: string) {
+    try {
+        const res = await fetch(`${API_BASE}/products/${slugOrId}`, {
+            next: { revalidate: 3600 } // 1 saatte bir yenile
+        });
+        if (!res.ok) return null;
+        return res.json();
+    } catch {
+        return null;
+    }
+}
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center font-black uppercase tracking-[0.4em] text-[10px]">
-            Yükleniyor...
-        </div>
-    );
+export async function generateMetadata(
+    { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+    const { id: slugOrId } = await params;
+    const product = await getProduct(slugOrId);
 
-    if (!product) return (
-        <div className="min-h-screen flex items-center justify-center font-black uppercase tracking-[0.4em] text-[10px] text-zinc-400">
-            Ürün bulunamadı
-        </div>
-    );
+    if (!product) {
+        return {
+            title: "Ürün Bulunamadı",
+            robots: { index: false, follow: false },
+        };
+    }
 
-    const allImages = [
-        product.imageUrl,
-        product.hoverImageUrl,
-        ...(product.galleryImageUrls || [])
-    ].filter(Boolean);
+    const imageUrl = product.imageUrl?.startsWith("http")
+        ? product.imageUrl
+        : `${SITE_URL}${product.imageUrl}`;
 
-    return (
-        <div className="min-h-screen bg-white pt-[50px] md:pt-24 pb-20">
-            <div className="max-w-[1500px] mx-auto px-0 md:px-6 lg:px-16">
-                <div className="flex flex-col lg:flex-row gap-0 md:gap-20 items-start">
-                    <div className="w-full lg:w-[50%] lg:sticky lg:top-28 pt-0 -mt-4 md:mt-0">
-                        <ProductGallery images={allImages} title={product.title} />
-                    </div>
-                    <aside className="w-full lg:w-[50%] mt-6 md:mt-0 px-6 md:px-0">
-                        <ProductInfo product={product} />
-                    </aside>
-                </div>
-                <div className="mt-10">
-                    <RecommendedProducts
-                        categoryId={product.category?.id}
-                        currentProductId={product.id}
-                    />
-                </div>
-            </div>
-        </div>
-    );
+    const canonicalSlug = product.slug || product.id;
+    const canonicalUrl = `${SITE_URL}/product/${canonicalSlug}`;
+
+    const price = product.discountedPrice > 0 ? product.discountedPrice : product.price;
+    const isOutOfStock = product.stockQuantity === 0;
+
+    const title = `${product.title} | ${product.brand || SITE_NAME}`;
+    const description = product.description
+        ? product.description.slice(0, 160)
+        : `${product.title} - ${product.material || ""} ${product.size || ""}`.trim();
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: canonicalUrl,
+        },
+        openGraph: {
+            title,
+            description,
+            url: canonicalUrl,
+            siteName: SITE_NAME,
+            locale: "tr_TR",
+            type: "website",
+            images: [
+                {
+                    url: imageUrl,
+                    width: 600,
+                    height: 800,
+                    alt: product.title,
+                },
+            ],
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+            images: [imageUrl],
+        },
+        other: {
+            // JSON-LD için işaret — aşağıda component içinde ekleniyor
+            "product:price:amount": String(price),
+            "product:price:currency": "TRY",
+            "product:availability": isOutOfStock ? "out of stock" : "in stock",
+        },
+    };
+}
+
+export default async function ProductPage(
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id: slugOrId } = await params;
+    // İlk yüklemede server'dan veriyi al, client'a geç
+    const initialProduct = await getProduct(slugOrId);
+
+    return <ProductPageClient slugOrId={slugOrId} initialProduct={initialProduct} />;
 }
