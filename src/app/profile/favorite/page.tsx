@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, Trash2, ShoppingBag, ArrowLeft, Loader2, Bell } from "lucide-react";
+import { Heart, ArrowLeft, Loader2, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,6 +11,7 @@ interface FavoriteProduct {
     favoriteId: number;
     product: {
         id: number;
+        slug?: string;
         title: string;
         description: string;
         price: number;
@@ -46,7 +47,6 @@ export default function FavoritesPage() {
             const res = await fetch(`${API_BASE}/favorites`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             if (res.ok) {
                 const data = await res.json();
                 setFavorites(data);
@@ -61,11 +61,11 @@ export default function FavoritesPage() {
     const handleRemoveFavorite = async (productId: number) => {
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${ASSET_URL}/api/favorites/${productId}`, {
+            // FIX: API_BASE kullanıldı (ASSET_URL hatalıydı)
+            const res = await fetch(`${API_BASE}/favorites/${productId}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             if (res.ok) {
                 setFavorites(prev => prev.filter(fav => fav.product.id !== productId));
             }
@@ -79,7 +79,6 @@ export default function FavoritesPage() {
             alert("Bu ürün şu anda stokta bulunmamaktadır");
             return;
         }
-
         try {
             await addToCart(productId, 1);
             openCart();
@@ -91,7 +90,6 @@ export default function FavoritesPage() {
     const formatUrl = (url: string | null | undefined) => {
         if (!url) return "/placeholder.jpg";
         if (url.startsWith("http")) return url;
-
         return `${ASSET_URL}${url.startsWith("/") ? url : `/${url}`}`;
     };
 
@@ -106,24 +104,19 @@ export default function FavoritesPage() {
     if (favorites.length === 0) {
         return (
             <div className="max-w-[1536px] mx-auto px-4 md:px-6 py-16">
-                {/* Header */}
                 <div className="mb-8">
                     <Link href="/" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 transition-colors mb-6">
                         <ArrowLeft size={16} />
                         Ana Sayfaya Dön
                     </Link>
                 </div>
-
-                {/* Empty State */}
                 <div className="text-center py-20">
-                    <div className="mb-6">
-                        <Heart size={64} className="mx-auto text-zinc-200" strokeWidth={1} />
-                    </div>
+                    <Heart size={64} className="mx-auto text-zinc-200 mb-6" strokeWidth={1} />
                     <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-3 tracking-tight">
                         Favorileriniz Boş
                     </h2>
                     <p className="text-zinc-500 mb-8 max-w-md mx-auto text-sm">
-                        Beğendiğiniz ürünleri favorilerinize ekleyerek kolayca takip edebilir ve istediğiniz zaman geri dönebilirsiniz.
+                        Beğendiğiniz ürünleri favorilerinize ekleyerek kolayca takip edebilirsiniz.
                     </p>
                     <Link
                         href="/shop"
@@ -138,13 +131,11 @@ export default function FavoritesPage() {
 
     return (
         <div className="max-w-[1536px] mx-auto px-4 md:px-6 py-8 md:py-12">
-            {/* Header */}
             <div className="mb-10">
                 <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors mb-6">
                     <ArrowLeft size={14} />
                     Ana Sayfa
                 </Link>
-
                 <div className="flex flex-col items-center text-center">
                     <h1 className="text-3xl md:text-4xl font-light tracking-[0.2em] uppercase text-zinc-900 mb-2">
                         Favorilerim
@@ -153,17 +144,17 @@ export default function FavoritesPage() {
                         <Heart size={12} className="fill-zinc-400" />
                         <span>{favorites.length} Ürün</span>
                     </div>
-                    <div className="w-12 h-[1px] bg-black mt-4 opacity-20"></div>
+                    <div className="w-12 h-[1px] bg-black mt-4 opacity-20" />
                 </div>
             </div>
 
-            {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-6">
                 <AnimatePresence mode="popLayout">
                     {favorites.map((item) => {
                         const isOutOfStock = item.product.stockQuantity <= 0;
                         const hasDiscount = item.product.discountedPrice && item.product.discountedPrice < item.product.price;
-                        const isHovered = hoveredId === item.product.id;
+                        // FIX: slug varsa slug, yoksa id
+                        const href = `/product/${item.product.slug || item.product.id}`;
 
                         return (
                             <motion.div
@@ -177,24 +168,19 @@ export default function FavoritesPage() {
                                 onMouseEnter={() => setHoveredId(item.product.id)}
                                 onMouseLeave={() => setHoveredId(null)}
                             >
-                                {/* Image Container */}
                                 <div className="relative overflow-hidden bg-[#f7f7f7]">
-
-                                    {/* Season Label / Etiket */}
                                     {item.product.seasonLabel && !isOutOfStock && (
                                         <div className="absolute top-3 left-3 z-10 bg-red-700 text-white px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
                                             {item.product.seasonLabel}
                                         </div>
                                     )}
-
                                     {isOutOfStock && (
                                         <div className="absolute top-3 left-3 z-10 bg-gray-200 text-gray-600 px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
                                             Tükendi
                                         </div>
                                     )}
 
-                                    {/* Product Image */}
-                                    <Link href={`/product/${item.product.id}`} className="block aspect-[3/4] relative overflow-hidden">
+                                    <Link href={href} className="block aspect-[3/4] relative overflow-hidden">
                                         <Image
                                             src={formatUrl(item.product.imageUrl)}
                                             alt={item.product.title}
@@ -213,7 +199,6 @@ export default function FavoritesPage() {
                                         )}
                                     </Link>
 
-                                    {/* Hover Add to Cart Button - Desktop */}
                                     <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover/card:translate-y-0 transition-transform duration-300 ease-in-out z-20 hidden md:block">
                                         {isOutOfStock ? (
                                             <button
@@ -232,45 +217,39 @@ export default function FavoritesPage() {
                                         )}
                                     </div>
 
-                                    {/* Remove from Favorites Button */}
                                     <button
                                         onClick={() => handleRemoveFavorite(item.product.id)}
                                         className="absolute top-3 right-3 z-10 text-red-500 hover:scale-110 transition-transform"
+                                        aria-label="Favorilerden çıkar"
                                     >
                                         <Heart size={18} strokeWidth={1.5} className="fill-red-500" />
                                     </button>
                                 </div>
 
-                                {/* Product Info */}
                                 <div className="mt-4 text-center px-1">
-                                    {/* Subtitle */}
                                     {item.product.subtitle && (
                                         <span className="block text-[9px] md:text-[10px] text-gray-400 uppercase tracking-[0.15em] mb-1 font-light">
                                             {item.product.subtitle}
                                         </span>
                                     )}
-
-                                    {/* Title */}
-                                    <Link href={`/product/${item.product.id}`} className="block group/title">
+                                    <Link href={href} className="block group/title">
                                         <h3 className="text-[11px] md:text-[12px] font-medium tracking-wider uppercase text-gray-700 line-clamp-1 leading-tight mb-1 transition-colors group-hover/title:text-black">
                                             {item.product.title}
                                         </h3>
                                     </Link>
-
-                                    {/* Price */}
                                     <div className="flex flex-col items-center gap-0.5">
                                         {hasDiscount ? (
                                             <div className="flex items-center gap-2">
                                                 <span className="text-gray-400 line-through text-[14px]">
-                                                    {item.product.price.toLocaleString('tr-TR')} TL
+                                                    {Number(item.product.price).toLocaleString('tr-TR')} TL
                                                 </span>
                                                 <span className="text-red-600 font-bold text-[14px]">
-                                                    {item.product.discountedPrice!.toLocaleString('tr-TR')} TL
+                                                    {Number(item.product.discountedPrice).toLocaleString('tr-TR')} TL
                                                 </span>
                                             </div>
                                         ) : (
                                             <span className="text-gray-900 font-bold text-[13px]">
-                                                {item.product.price.toLocaleString('tr-TR')} TL
+                                                {Number(item.product.price).toLocaleString('tr-TR')} TL
                                             </span>
                                         )}
                                     </div>
@@ -281,14 +260,12 @@ export default function FavoritesPage() {
                 </AnimatePresence>
             </div>
 
-            {/* Bottom Actions - Mobile */}
+            {/* Mobil alt bar */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-zinc-100 shadow-lg z-30">
                 <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-500">
-                        {favorites.length} favori ürün
-                    </span>
+                    <span className="text-zinc-500">{favorites.length} favori ürün</span>
                     <Link
-                        href="/products"
+                        href="/shop"
                         className="px-4 py-2 bg-zinc-900 text-white text-[10px] font-bold uppercase tracking-wider"
                     >
                         Alışverişe Devam

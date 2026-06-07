@@ -8,7 +8,7 @@ import SubcategoryPopup from "./SubcategoryPopup";
 import { useRouter } from "next/navigation";
 import { useSettings } from "@/contexts/SettingsContext";
 
-type Product = { id: number; title: string; imageUrl: string; brand: string; sku?: string; };
+type Product = { id: number; slug?: string; title: string; imageUrl: string; brand: string; sku?: string; };
 type Category = { id: number; name: string; slug: string };
 
 export default function HeaderPopup({onClose}: { onClose: () => void }) {
@@ -48,7 +48,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
         const delayDebounceFn = setTimeout(() => {
             if (searchQuery.length > 2) {
                 setIsSearching(true);
-                fetch(`${API_BASE}/products`)
+                fetch(`${API_BASE}/products?all=true`)
                     .then(res => res.json())
                     .then((data: Product[]) => {
                         const filtered = data.filter(p =>
@@ -153,7 +153,7 @@ export default function HeaderPopup({onClose}: { onClose: () => void }) {
                                                 className="absolute top-full left-0 right-0 mt-1 bg-white shadow-xl border border-zinc-50 z-[70]"
                                             >
                                                 {searchResults.map((product) => (
-                                                    <Link key={product.id} href={`/product/${product.id}`} onClick={handleClose}
+                                                    <Link key={product.id} href={`/product/${product.slug || product.id}`} onClick={handleClose}
                                                           className="flex items-center gap-3 p-3 hover:bg-zinc-50 border-b border-zinc-50 last:border-none">
                                                         <div className="w-8 h-10 relative shrink-0 bg-zinc-50">
                                                             <Image

@@ -9,17 +9,15 @@ export default function ProductInfo({ product }: { product: any }) {
     const fixUrl = (path: string) => {
         if (!path) return "";
         if (path.startsWith("http")) return path;
-
         const baseUrl = process.env.NEXT_PUBLIC_ASSET_URL;
         const cleanPath = path.startsWith("/") ? path : `/${path}`;
-
         return `${baseUrl}${cleanPath}`;
     };
 
     return (
         <div className="space-y-4 md:space-y-6 w-full text-zinc-900 bg-white p-2 md:p-4 lg:max-w-[550px]">
 
-            {/* 1. ÜST SEGMENT: Marka, REF ve Başlık */}
+            {/* 1. ÜST SEGMENT */}
             <div className="space-y-3">
                 <nav className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">
@@ -27,7 +25,6 @@ export default function ProductInfo({ product }: { product: any }) {
                         <ChevronRight size={10} strokeWidth={3} className="text-zinc-300" />
                         <span>{product.category?.name}</span>
                     </div>
-                    {/* REF ALANI: Sağ üstte, hafif ve profesyonel bir görünüm */}
                     <span className="text-[10px] font-medium text-zinc-400 tracking-tighter">
                         REF: <span className="text-zinc-600">{product.sku || "N/A"}</span>
                     </span>
@@ -39,7 +36,7 @@ export default function ProductInfo({ product }: { product: any }) {
 
                 <div className="flex items-center gap-3 pt-1">
                     <span className="text-2xl font-black tracking-tighter text-red-600">
-                        {Number(product.discountedPrice || product.price).toLocaleString("tr-TR")} ₺
+                        {Number(product.discountedPrice > 0 ? product.discountedPrice : product.price).toLocaleString("tr-TR")} ₺
                     </span>
                     {product.discountedPrice > 0 && (
                         <span className="text-xl text-zinc-400 line-through decoration-zinc-300">
@@ -49,16 +46,16 @@ export default function ProductInfo({ product }: { product: any }) {
                 </div>
             </div>
 
-            {/* 2. TEKNİK ÖZELLİKLER: Modern Chip Tasarımı - MOBİLDE DARALTILMIŞ */}
+            {/* 2. TEKNİK ÖZELLİKLER */}
             <div className="flex flex-wrap gap-2 py-2 md:py-4 border-y border-zinc-50">
-                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-lg transition-hover hover:bg-zinc-100">
+                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-lg hover:bg-zinc-100 transition-colors">
                     <Info size={14} className="text-zinc-400" />
                     <div className="flex flex-col">
                         <span className="text-[9px] uppercase font-bold text-zinc-400 leading-none mb-0.5">Materyal</span>
                         <span className="text-[11px] font-bold text-zinc-700 leading-none">{product.material || "Saf İpek"}</span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-lg transition-hover hover:bg-zinc-100">
+                <div className="flex items-center gap-2 bg-zinc-50 px-3 py-2 rounded-lg hover:bg-zinc-100 transition-colors">
                     <Ruler size={14} className="text-zinc-400" />
                     <div className="flex flex-col">
                         <span className="text-[9px] uppercase font-bold text-zinc-400 leading-none mb-0.5">Ölçü</span>
@@ -74,7 +71,7 @@ export default function ProductInfo({ product }: { product: any }) {
                 </p>
             </div>
 
-            {/* 4. VARYANTLAR */}
+            {/* 4. VARYANTLAR — slug varsa slug, yoksa id ile link */}
             {otherVariants.length > 0 && (
                 <div className="space-y-2 md:space-y-3">
                     <div className="flex items-center gap-2">
@@ -85,10 +82,14 @@ export default function ProductInfo({ product }: { product: any }) {
                         {otherVariants.map((v: any) => (
                             <Link
                                 key={v.id}
-                                href={`/product/${v.id}`}
+                                href={`/product/${v.slug || v.id}`}
                                 className="group w-12 h-14 rounded-lg overflow-hidden border border-zinc-100 hover:border-black transition-all shadow-sm"
                             >
-                                <img src={fixUrl(v.imageUrl)} alt={v.color} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <img
+                                    src={fixUrl(v.imageUrl)}
+                                    alt={v.color}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
                             </Link>
                         ))}
                     </div>

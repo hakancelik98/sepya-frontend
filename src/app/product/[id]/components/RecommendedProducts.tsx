@@ -5,20 +5,33 @@ import { Bell } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import FavoriteButton from "@/components/FavoriteButton";
 
-export default function RecommendedProducts({ categoryId, currentProductId }: { categoryId: number, currentProductId: number }) {
+export default function RecommendedProducts({
+                                                categoryId,
+                                                currentProductId
+                                            }: {
+    categoryId: number;
+    currentProductId: number;
+}) {
     const [products, setProducts] = useState<any[]>([]);
     const { addToCart, openCart } = useCart();
     const API_BASE = process.env.NEXT_PUBLIC_API_URL;
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
 
     useEffect(() => {
-        fetch(`${API_BASE}/products?categoryId=${categoryId}`)
+        if (!categoryId) return;
+        // FIX: categoryId parametresi backend tarafından desteklenmiyorsa
+        // kategori slug'ı üzerinden çekilebilir; şimdilik mevcut endpoint kullanılıyor
+        fetch(`${API_BASE}/products/category/${categoryId}?page=0&size=8`)
             .then(res => res.json())
             .then(data => {
-                let allProducts = data.content || data;
-                let filtered = allProducts.filter((p: any) => String(p.id) !== String(currentProductId));
-                setProducts(filtered.sort(() => 0.5 - Math.random()).slice(0, 4));
-            });
+                // Spring Page veya array olabilir
+                const all: any[] = Array.isArray(data) ? data : (data.content || []);
+                const filtered = all.filter((p: any) => String(p.id) !== String(currentProductId));
+                // Rastgele 4 ürün seç
+                const shuffled = filtered.sort(() => 0.5 - Math.random()).slice(0, 4);
+                setProducts(shuffled);
+            })
+            .catch(err => console.error("RecommendedProducts fetch error:", err));
     }, [categoryId, currentProductId]);
 
     const fixUrl = (path: string) => {
@@ -27,52 +40,56 @@ export default function RecommendedProducts({ categoryId, currentProductId }: { 
         return `${ASSET_BASE}${path.startsWith("/") ? path : `/${path}`}`;
     };
 
+    if (products.length === 0) return null;
+
     return (
         <section className="py-8 bg-white border-t border-zinc-50">
             <div className="max-w-[1536px] mx-auto">
-
                 <div className="flex flex-col items-center mb-12 text-center px-4">
-                    <span className="text-[12px] font-bold uppercase tracking-[0.4em] text-zinc-500 mb-2 italic">Keşfetmeye Devam Et</span>
+                    <span className="text-[12px] font-bold uppercase tracking-[0.4em] text-zinc-500 mb-2 italic">
+                        Keşfetmeye Devam Et
+                    </span>
                     <h2 className="font-serif italic lowercase text-[40px] text-zinc-900">
                         Sizin İçin Seçtiklerimiz
                     </h2>
-                    <div className="w-12 h-[1px] bg-black mt-6 opacity-20"></div>
+                    <div className="w-12 h-[1px] bg-black mt-6 opacity-20" />
                 </div>
 
-                {/* Mobilde px-2 + gap-[6px], masaüstünde px-6 + normal gap — ProductGrid ile aynı */}
                 <div className="px-2 md:px-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-[6px] md:gap-6">
                         {products.map((item) => {
                             const isOutOfStock = item.stockQuantity <= 0;
                             const hasDiscount = item.discountedPrice && item.discountedPrice < item.price;
+                            // FIX: slug varsa slug, yoksa id
+                            const href = `/product/${item.slug || item.id}`;
 
                             return (
                                 <div key={item.id} className="group/card flex flex-col">
                                     <div className="relative overflow-hidden bg-[#f7f7f7]">
-
-                                        {item.tag && !isOutOfStock && (
+                                        {item.seasonLabel && !isOutOfStock && (
                                             <div className="absolute top-3 left-3 z-10 bg-red-700 text-white px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
-                                                {item.tag}
+                                                {item.seasonLabel}
                                             </div>
                                         )}
-
                                         {isOutOfStock && (
                                             <div className="absolute top-3 left-3 z-10 bg-zinc-200 text-zinc-600 px-2 py-1 text-[9px] tracking-tighter uppercase font-medium">
                                                 Tükendi
                                             </div>
                                         )}
 
-                                        <Link href={`/product/${item.id}`} className="block aspect-[3/4] relative overflow-hidden">
+                                        <Link href={href} className="block aspect-[3/4] relative overflow-hidden">
                                             <img
                                                 src={fixUrl(item.imageUrl)}
-                                                className={`w-full h-full object-cover transition-opacity duration-700 ${item.hoverImageUrl && 'group-hover/card:opacity-0'}`}
+                                                className={`w-full h-full object-cover transition-opacity duration-700 ${item.hoverImageUrl ? 'group-hover/card:opacity-0' : ''}`}
                                                 alt={item.title}
+                                                loading="lazy"
                                             />
                                             {item.hoverImageUrl && (
                                                 <img
                                                     src={fixUrl(item.hoverImageUrl)}
                                                     className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 scale-105 group-hover/card:scale-100"
                                                     alt={`${item.title} hover`}
+                                                    loading="lazy"
                                                 />
                                             )}
                                         </Link>
@@ -92,16 +109,21 @@ export default function RecommendedProducts({ categoryId, currentProductId }: { 
                                             )}
                                         </div>
 
-                                        <FavoriteButton productId={item.id} className="absolute top-3 right-3 z-10 pointer-events-auto" />
+                                        <FavoriteButton
+                                            productId={item.id}
+                                            className="absolute top-3 right-3 z-10 pointer-events-auto"
+                                        />
                                     </div>
 
                                     <div className="mt-4 text-center px-1">
                                         <span className="block text-[9px] md:text-[10px] text-zinc-400 uppercase tracking-[0.15em] mb-1 font-light">
                                             {item.brand || "Koleksiyon"}
                                         </span>
-                                        <h3 className="text-[11px] md:text-[12px] font-medium tracking-wider uppercase text-zinc-700 line-clamp-1 leading-tight mb-1">
-                                            {item.title}
-                                        </h3>
+                                        <Link href={href} className="block group/title">
+                                            <h3 className="text-[11px] md:text-[12px] font-medium tracking-wider uppercase text-zinc-700 line-clamp-1 leading-tight mb-1 transition-colors group-hover/title:text-black">
+                                                {item.title}
+                                            </h3>
+                                        </Link>
                                         <div className="flex flex-col items-center gap-0.5">
                                             {hasDiscount ? (
                                                 <div className="flex items-center gap-2">
