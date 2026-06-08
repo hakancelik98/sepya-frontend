@@ -12,11 +12,11 @@ export default function CashOnDeliveryPayment({ serviceFee = 0 }: CashOnDelivery
                 <span className="text-2xl">🚚</span>
             </div>
 
-            <h3 className="text-[12px] text-gray-900 font-black uppercase tracking-widest mb-1.5">
+            <h3 className="text-[14px] text-gray-900 font-black uppercase tracking-widest mb-1.5">
                 Kapıda Ödeme
             </h3>
 
-            <p className="text-[10px] text-gray-500 px-6 leading-tight mb-4">
+            <p className="text-[12px] text-gray-500 px-6 leading-tight mb-4">
                 Ödemenizi teslimat anında nakit veya kartla yapabilirsiniz.
             </p>
 

@@ -167,7 +167,7 @@ export default function CartDrawer() {
                                                 {/* Stok Uyarısı - Daha Az Yer Kaplar */}
                                                 {isAtMaxStock && (
                                                     <p className="text-[10px] text-orange-600 font-bold leading-none mb-1">
-                                                        Maksimum stok sınırı
+                                                        Son 1 ürün!
                                                     </p>
                                                 )}
 
