@@ -16,6 +16,7 @@ export default function CartDrawer() {
         removeFromCart,
         isLoading,
         isGuestCart,
+        freeShippingLimit
     } = useCart();
 
     const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_URL;
@@ -26,7 +27,7 @@ export default function CartDrawer() {
     const totalPrice = cart?.totalPrice || 0;
     const itemCount = cart?.totalItems || 0;
 
-    const shippingLimit = 1500;
+    const shippingLimit = freeShippingLimit;
     const remaining = shippingLimit - totalPrice;
     const progress = Math.min((totalPrice / shippingLimit) * 100, 100);
 

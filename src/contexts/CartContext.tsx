@@ -19,6 +19,7 @@ type CartContextType = {
     itemCount: number;
     isGuestCart: boolean;
     syncGuestCartToBackend: () => Promise<void>;
+    freeShippingLimit: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -32,6 +33,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isGuestCart, setIsGuestCart] = useState(false);
+    const [freeShippingLimit, setFreeShippingLimit] = useState(0);
 
     const openCart = () => setIsCartOpen(true);
     const closeCart = () => setIsCartOpen(false);
@@ -62,6 +64,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
             await loadGuestCart();
             setIsGuestCart(true);
+        }
+        try {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            const res = await fetch(`${API_URL}/public/finance/calculate-shipping?amount=0&paymentMethod=CREDIT_CARD`);
+            const data = await res.json();
+            if (data.freeAbove) setFreeShippingLimit(data.freeAbove);
+        } catch {
+            setFreeShippingLimit(1500); // fallback
         }
     };
 
@@ -324,7 +334,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             cart, isLoading, itemCount,
             addToCart, removeFromCart, updateQuantity, clearCart, refreshCart,
             isCartOpen, openCart, closeCart,
-            isGuestCart, syncGuestCartToBackend,
+            isGuestCart, syncGuestCartToBackend, freeShippingLimit,
         }}>
             {children}
         </CartContext.Provider>
