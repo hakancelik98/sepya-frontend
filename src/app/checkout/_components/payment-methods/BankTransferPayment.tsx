@@ -41,17 +41,17 @@ export default function BankTransferPayment({
                     <span className="text-2xl">🏦</span>
                 </div>
 
-                <h3 className="text-[12px] text-gray-900 font-black uppercase tracking-widest mb-1.5">
+                <h3 className="text-[14px] text-gray-900 font-black uppercase tracking-widest mb-1.5">
                     Havale / EFT
                 </h3>
 
-                <p className="text-[10px] text-gray-500 leading-tight mb-4">
+                <p className="text-[12px] text-gray-500 leading-tight mb-4">
                     Aşağıdaki hesap bilgilerimize ödemenizi gerçekleştirin.
                 </p>
 
                 {discount > 0 && (
                     <div className="mb-5 bg-green-50 rounded-lg py-2 px-3 border border-green-100 inline-block">
-                        <p className="text-[10px] text-green-800 font-bold uppercase tracking-tight">
+                        <p className="text-[12px] text-green-800 font-bold uppercase tracking-tight">
                             Havale İndirimi: -{discount.toFixed(2)} ₺
                         </p>
                     </div>
@@ -64,7 +64,7 @@ export default function BankTransferPayment({
                         <div className="flex flex-col gap-1.5 text-left">
                             <div className="flex items-center gap-2 text-gray-600">
                                 <Building2 size={12} className="shrink-0" />
-                                <span className="text-[10px] font-black uppercase text-gray-900 tracking-tight">
+                                <span className="text-[12px] font-black uppercase text-gray-900 tracking-tight">
                                     {bankInfo.bankName}
                                     {bankInfo.bankBranch && <span className="font-medium text-gray-500 ml-1">({bankInfo.bankBranch})</span>}
                                 </span>
@@ -72,7 +72,7 @@ export default function BankTransferPayment({
 
                             <div className="flex items-center gap-2 text-gray-600">
                                 <User size={12} className="shrink-0" />
-                                <span className="text-[10px] font-black uppercase text-gray-900 tracking-tight">
+                                <span className="text-[12px] font-black uppercase text-gray-900 tracking-tight">
                                     {bankInfo.accountHolder}
                                 </span>
                             </div>
@@ -85,7 +85,7 @@ export default function BankTransferPayment({
                         >
                             <div className="flex items-center gap-2">
                                 <CreditCard size={12} className="text-blue-500" />
-                                <span className="text-[11px] font-mono font-black text-blue-900 tracking-wider">
+                                <span className="text-[13px] font-mono font-black text-blue-900 tracking-wider">
                                     {formatIBAN(bankInfo.iban || '')}
                                 </span>
                             </div>
@@ -98,7 +98,7 @@ export default function BankTransferPayment({
 
                         {/* Hesap No & SWIFT (Varsa) */}
                         {(bankInfo.accountNumber || bankInfo.swiftCode) && (
-                            <div className="flex justify-start gap-4 text-[9px] font-bold text-gray-400 uppercase tracking-tighter pl-1">
+                            <div className="flex justify-start gap-4 text-[11px] font-bold text-gray-400 uppercase tracking-tighter pl-1">
                                 {bankInfo.accountNumber && (
                                     <span>No: <span className="text-gray-700">{bankInfo.accountNumber}</span></span>
                                 )}
@@ -110,15 +110,20 @@ export default function BankTransferPayment({
                     </div>
                 ) : (
                     <div className="py-2">
-                        <p className="text-[10px] text-amber-600 font-bold uppercase">⚠️ Banka bilgileri henüz tanımlanmamış.</p>
+                        <p className="text-[12px] text-amber-600 font-bold uppercase">⚠️ Banka bilgileri henüz tanımlanmamış.</p>
                     </div>
                 )}
 
                 {/* Alt Bilgilendirme */}
                 <div className="mt-5 pt-4 border-t border-gray-100 flex flex-col gap-1.5">
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">
-                        📢 Ödeme açıklamasına sipariş numaranızı yazın Sipariş numaranızı siparişi tamamladıktan sonra görebilirsiniz.
-                    </p>
+                    <div className="bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5 text-left">
+                        <p className="text-[12px] text-amber-800 font-black uppercase tracking-tight leading-snug">
+                            📢 Ödeme açıklamasına mutlaka sipariş numaranızı yazın!
+                        </p>
+                        <p className="text-[11px] text-amber-600 font-medium mt-0.5 leading-snug">
+                            Sipariş numaranızı siparişi tamamladıktan sonra görebilirsiniz.
+                        </p>
+                    </div>
                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
                         ⏱️ Kontrol süresi: 1-2 iş günü
                     </p>
