@@ -30,6 +30,7 @@ export default function CashOnDeliveryPayment({ serviceFee = 0 }: CashOnDelivery
                 </div>
             )}
 
+
             {/* Bilgi listesi daha kompakt hale getirildi */}
             <div className="mt-4 space-y-1.5 px-6 inline-block text-left">
                 <div className="flex items-center gap-2">
