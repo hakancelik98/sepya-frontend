@@ -44,4 +44,5 @@ export default function CashOnDeliveryPayment({ serviceFee = 0 }: CashOnDelivery
             </div>
         </div>
     );
+
 }
