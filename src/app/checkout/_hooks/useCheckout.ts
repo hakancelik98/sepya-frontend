@@ -38,7 +38,7 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
     const [shippingFee, setShippingFee] = useState(0);
     const [paymentServiceFee, setPaymentServiceFee] = useState(0);
     const [paymentDiscount, setPaymentDiscount] = useState(0); // Havale indirimi
-    const [couponDiscount, setCouponDiscount] = useState(0);   // ✅ Kupon indirimi (AYRI)
+    const [couponDiscount, setCouponDiscount] = useState(0);   // Kupon indirimi (AYRI)
 
     // UI State
     const [isProcessing, setIsProcessing] = useState(false);
@@ -57,7 +57,6 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
 
     // Step 1: Shipping Form Submit
     const handleShippingSubmit = useCallback((address: Address) => {
-        console.log("📦 Teslimat bilgileri alındı:", address);
         setShippingAddress(address);
         setCurrentStep("payment");
         setError(null);
@@ -70,19 +69,61 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
             paymentServiceFee: number;
             paymentDiscount: number;
         }) => {
-            console.log("💰 Finansal veriler güncellendi:", data);
             setShippingFee(data.shippingFee);
             setPaymentServiceFee(data.paymentServiceFee);
-            setPaymentDiscount(data.paymentDiscount); // Sadece havale indirimi
+            setPaymentDiscount(data.paymentDiscount);
         },
         []
     );
 
-    // ✅ YENI: Kupon indirimini güncelleyen fonksiyon
     const handleCouponUpdate = useCallback((discount: number) => {
-        console.log("🎫 Kupon indirimi güncellendi:", discount);
         setCouponDiscount(discount);
     }, []);
+
+    /**
+     * Paratika Direct POST 3D formunu oluşturup tarayıcıdan DOĞRUDAN
+     * Paratika'ya gönderir. Kart bilgisi backend'e HİÇ gitmez.
+     */
+    const submitToParatikaDirectPost = useCallback(
+        (sessionToken: string, cardDetails: {
+            cardNumber: string;
+            cardholderName: string;
+            expiryMonth: string;
+            expiryYear: string;
+            cvv: string;
+        }) => {
+            const directPost3dUrl = `https://vpos.paratika.com.tr/paratika/api/v2/post/sale3d/${sessionToken}`;
+
+            // 2 haneli yıl (YY) geldiği için 4 haneye tamamla (20YY)
+            const fullYear = cardDetails.expiryYear.length === 2
+                ? `20${cardDetails.expiryYear}`
+                : cardDetails.expiryYear;
+
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = directPost3dUrl;
+            form.style.display = "none";
+
+            const fields: Record<string, string> = {
+                CARDPAN: cardDetails.cardNumber.replace(/\s/g, ""),
+                CARDEXPIRY: `${cardDetails.expiryMonth}.${fullYear}`,
+                CARDCVV: cardDetails.cvv,
+                NAMEONCARD: cardDetails.cardholderName,
+            };
+
+            Object.entries(fields).forEach(([name, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        },
+        []
+    );
 
     // Step 3: Payment Submit & Start Checkout
     const handlePaymentSubmit = useCallback(
@@ -97,8 +138,6 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
             setPaymentMethod(payment);
 
             try {
-                console.log("🚀 Checkout başlatılıyor...");
-
                 const idempotencyKey = generateUUID();
                 const total = calculateTotal();
 
@@ -115,40 +154,47 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
                         email: shippingAddress.email,
                     },
                     idempotencyKey,
+                    // ✅ DEĞİŞTİ: mock yerine paratika
                     provider:
-                        payment.type === "CREDIT_CARD" ? "mock" : undefined,
+                        payment.type === "CREDIT_CARD" ? "paratika" : undefined,
                     shippingFee,
-                    discountAmount: paymentDiscount + couponDiscount, // ✅ İki indirim de gönderiliyor
+                    discountAmount: paymentDiscount + couponDiscount,
                     totalAmount: total,
                     couponCode: null,
-                    paymentMethod: payment.type, // ✅ EKLENEN: PaymentMethod backend'e gönderiliyor
+                    paymentMethod: payment.type,
                 };
-
-                console.log("📤 Backend'e gönderilen veri:", checkoutData);
 
                 const response = await checkoutService.startCheckout(checkoutData);
 
-                console.log("✅ Checkout response:", response);
-
-                // Ödeme yöntemine göre yönlendirme
                 if (payment.type === "CREDIT_CARD") {
-                    // 3D Secure sayfasına yönlendir
-                    if (response.redirectUrl) {
-                        window.location.href = response.redirectUrl;
-                    } else {
-                        throw new Error("3D Secure URL bulunamadı");
+                    // ✅ DEĞİŞTİ: redirectUrl yerine clientSecret (sessionToken) kullanılıyor.
+                    // Kart bilgisi backend'e değil, doğrudan Paratika'ya POST ediliyor.
+                    const sessionToken = response.clientSecret;
+
+                    if (!sessionToken) {
+                        throw new Error("Ödeme oturumu (sessionToken) alınamadı");
                     }
+
+                    if (!payment.cardDetails) {
+                        throw new Error("Kart bilgileri eksik");
+                    }
+
+                    submitToParatikaDirectPost(sessionToken, payment.cardDetails);
+                    // NOT: submit sonrası tarayıcı Paratika'ya gidip 3D Secure akışına
+                    // girecek, bu fonksiyon buradan sonra bir şey yapmaz (sayfa zaten
+                    // yönlendirilmiş olacak). isProcessing bilerek false yapılmıyor,
+                    // form submit ile sayfa değişecek.
                 } else {
                     // COD veya Havale için success sayfasına
                     router.push(`/checkout/success?order=${response.orderNumber}&method=${payment.type.toLowerCase()}`);
                 }
             } catch (err: any) {
-                console.error("❌ Checkout hatası:", err);
+                console.error("Checkout hatası:", err);
                 setError(err.message || "Ödeme işlemi başlatılamadı");
                 setIsProcessing(false);
             }
         },
-        [shippingAddress, shippingFee, paymentDiscount, couponDiscount, calculateTotal, router]
+        [shippingAddress, shippingFee, paymentDiscount, couponDiscount, calculateTotal, router, submitToParatikaDirectPost]
     );
 
     // Back to Shipping
@@ -158,7 +204,6 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
     }, []);
 
     return {
-        // State
         currentStep,
         shippingAddress,
         paymentMethod,
@@ -168,14 +213,10 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
         couponDiscount,
         isProcessing,
         error,
-
-        // Computed
         total: calculateTotal(),
-
-        // Handlers
         handleShippingSubmit,
         handleTotalsUpdate,
-        handleCouponUpdate, // ✅ YENI
+        handleCouponUpdate,
         handlePaymentSubmit,
         handleBackToShipping,
         setError,
