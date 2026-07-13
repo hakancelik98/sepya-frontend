@@ -94,9 +94,10 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
         }) => {
             const directPost3dUrl = `https://vpos.paratika.com.tr/paratika/api/v2/post/sale3d/${sessionToken}`;
 
-            // 2 haneli yıl (YY) geldiği için 4 haneye tamamla (20YY)
-            const fullYear = cardDetails.expiryYear.length === 2
-                ? `20${cardDetails.expiryYear}`
+            // Paratika resmi dokümantasyonu: CARDEXPIRY [mm.yy] formatında olmalı
+            // (2 haneli yıl - 4 haneye ÇEVİRME, olduğu gibi gönder)
+            const twoDigitYear = cardDetails.expiryYear.length === 4
+                ? cardDetails.expiryYear.slice(-2)
                 : cardDetails.expiryYear;
 
             const form = document.createElement("form");
@@ -106,7 +107,7 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
 
             const fields: Record<string, string> = {
                 CARDPAN: cardDetails.cardNumber.replace(/\s/g, ""),
-                CARDEXPIRY: `${cardDetails.expiryMonth}.${fullYear}`,
+                CARDEXPIRY: `${cardDetails.expiryMonth}.${twoDigitYear}`,
                 CARDCVV: cardDetails.cvv,
                 NAMEONCARD: cardDetails.cardholderName,
             };
