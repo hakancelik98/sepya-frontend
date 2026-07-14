@@ -94,10 +94,11 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
         }) => {
             const directPost3dUrl = `https://vpos.paratika.com.tr/paratika/api/v2/post/sale3d/${sessionToken}`;
 
-            // Paratika resmi dokümantasyonu: CARDEXPIRY [mm.yy] formatında olmalı
-            // (2 haneli yıl - 4 haneye ÇEVİRME, olduğu gibi gönder)
-            const twoDigitYear = cardDetails.expiryYear.length === 4
-                ? cardDetails.expiryYear.slice(-2)
+            // Paratika'nın resmi DirectPost 3D form örneğine göre DOĞRU alan isimleri.
+            // (CARDPAN/CARDEXPIRY/CARDCVV/NAMEONCARD DEĞİL - bunlar yanlıştı!)
+            // expiryYear 4 haneli olmalı (örn. "2030"), expiryMonth 2 haneli (örn. "05")
+            const fourDigitYear = cardDetails.expiryYear.length === 2
+                ? `20${cardDetails.expiryYear}`
                 : cardDetails.expiryYear;
 
             const form = document.createElement("form");
@@ -106,10 +107,14 @@ export function useCheckout({ cartItems, cartSubtotal }: UseCheckoutProps) {
             form.style.display = "none";
 
             const fields: Record<string, string> = {
-                CARDPAN: cardDetails.cardNumber.replace(/\s/g, ""),
-                CARDEXPIRY: `${cardDetails.expiryMonth}.${twoDigitYear}`,
-                CARDCVV: cardDetails.cvv,
-                NAMEONCARD: cardDetails.cardholderName,
+                cardOwner: cardDetails.cardholderName,
+                pan: cardDetails.cardNumber.replace(/\s/g, ""),
+                expiryMonth: cardDetails.expiryMonth.padStart(2, "0"),
+                expiryYear: fourDigitYear,
+                cvv: cardDetails.cvv,
+                installmentCount: "1",
+                points: "",
+                paymentSystem: "",
             };
 
             Object.entries(fields).forEach(([name, value]) => {
